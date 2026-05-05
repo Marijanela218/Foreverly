@@ -1,0 +1,30 @@
+# Build
+bin/
+obj/
+
+# User files
+*.user
+*.suo
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# Rider
+.idea/
+
+# EF migrations snapshot (ostavi migracije ali ne cache)
+*.db
+*.sqlite
+
+# Secrets
+appsettings.Development.json
+
+.vs/
+
