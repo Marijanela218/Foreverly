@@ -10,23 +10,23 @@ using Foreverly.Models;
 
 namespace Foreverly.Controllers
 {
-    public class WeddingsController : Controller
+    public class WeddingTablesController : Controller
     {
         private readonly AppDbContext _context;
 
-        public WeddingsController(AppDbContext context)
+        public WeddingTablesController(AppDbContext context)
         {
             _context = context;
         }
 
-        // GET: Weddings
+        // GET: WeddingTables
         public async Task<IActionResult> Index()
         {
-            var appDbContext = _context.Weddings.Include(w => w.Template);
+            var appDbContext = _context.WeddingTables.Include(w => w.Wedding);
             return View(await appDbContext.ToListAsync());
         }
 
-        // GET: Weddings/Details/5
+        // GET: WeddingTables/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -34,42 +34,42 @@ namespace Foreverly.Controllers
                 return NotFound();
             }
 
-            var wedding = await _context.Weddings
-                .Include(w => w.Template)
+            var weddingTable = await _context.WeddingTables
+                .Include(w => w.Wedding)
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (wedding == null)
+            if (weddingTable == null)
             {
                 return NotFound();
             }
 
-            return View(wedding);
+            return View(weddingTable);
         }
 
-        // GET: Weddings/Create
+        // GET: WeddingTables/Create
         public IActionResult Create()
         {
-            ViewData["TemplateId"] = new SelectList(_context.Templates, "Id", "Id");
+            ViewData["WeddingId"] = new SelectList(_context.Weddings, "Id", "Id");
             return View();
         }
 
-        // POST: Weddings/Create
+        // POST: WeddingTables/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,SuggestedDate,ConfirmedDate,Status,ClientName,ClientPhone,ClientEmail,ClientAddress,Notes,TemplateId")] Wedding wedding)
+        public async Task<IActionResult> Create([Bind("Id,WeddingId,TableName,Capacity,PositionNote")] WeddingTable weddingTable)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(wedding);
+                _context.Add(weddingTable);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["TemplateId"] = new SelectList(_context.Templates, "Id", "Id", wedding.TemplateId);
-            return View(wedding);
+            ViewData["WeddingId"] = new SelectList(_context.Weddings, "Id", "Id", weddingTable.WeddingId);
+            return View(weddingTable);
         }
 
-        // GET: Weddings/Edit/5
+        // GET: WeddingTables/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -77,23 +77,23 @@ namespace Foreverly.Controllers
                 return NotFound();
             }
 
-            var wedding = await _context.Weddings.FindAsync(id);
-            if (wedding == null)
+            var weddingTable = await _context.WeddingTables.FindAsync(id);
+            if (weddingTable == null)
             {
                 return NotFound();
             }
-            ViewData["TemplateId"] = new SelectList(_context.Templates, "Id", "Id", wedding.TemplateId);
-            return View(wedding);
+            ViewData["WeddingId"] = new SelectList(_context.Weddings, "Id", "Id", weddingTable.WeddingId);
+            return View(weddingTable);
         }
 
-        // POST: Weddings/Edit/5
+        // POST: WeddingTables/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,SuggestedDate,ConfirmedDate,Status,ClientName,ClientPhone,ClientEmail,ClientAddress,Notes,TemplateId")] Wedding wedding)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,WeddingId,TableName,Capacity,PositionNote")] WeddingTable weddingTable)
         {
-            if (id != wedding.Id)
+            if (id != weddingTable.Id)
             {
                 return NotFound();
             }
@@ -102,12 +102,12 @@ namespace Foreverly.Controllers
             {
                 try
                 {
-                    _context.Update(wedding);
+                    _context.Update(weddingTable);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!WeddingExists(wedding.Id))
+                    if (!WeddingTableExists(weddingTable.Id))
                     {
                         return NotFound();
                     }
@@ -118,11 +118,11 @@ namespace Foreverly.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["TemplateId"] = new SelectList(_context.Templates, "Id", "Id", wedding.TemplateId);
-            return View(wedding);
+            ViewData["WeddingId"] = new SelectList(_context.Weddings, "Id", "Id", weddingTable.WeddingId);
+            return View(weddingTable);
         }
 
-        // GET: Weddings/Delete/5
+        // GET: WeddingTables/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -130,35 +130,35 @@ namespace Foreverly.Controllers
                 return NotFound();
             }
 
-            var wedding = await _context.Weddings
-                .Include(w => w.Template)
+            var weddingTable = await _context.WeddingTables
+                .Include(w => w.Wedding)
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (wedding == null)
+            if (weddingTable == null)
             {
                 return NotFound();
             }
 
-            return View(wedding);
+            return View(weddingTable);
         }
 
-        // POST: Weddings/Delete/5
+        // POST: WeddingTables/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var wedding = await _context.Weddings.FindAsync(id);
-            if (wedding != null)
+            var weddingTable = await _context.WeddingTables.FindAsync(id);
+            if (weddingTable != null)
             {
-                _context.Weddings.Remove(wedding);
+                _context.WeddingTables.Remove(weddingTable);
             }
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool WeddingExists(int id)
+        private bool WeddingTableExists(int id)
         {
-            return _context.Weddings.Any(e => e.Id == id);
+            return _context.WeddingTables.Any(e => e.Id == id);
         }
     }
 }
