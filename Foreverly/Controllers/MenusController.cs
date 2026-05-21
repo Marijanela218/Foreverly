@@ -10,23 +10,23 @@ using Foreverly.Models;
 
 namespace Foreverly.Controllers
 {
-    public class WeddingsController : Controller
+    public class MenusController : Controller
     {
         private readonly AppDbContext _context;
 
-        public WeddingsController(AppDbContext context)
+        public MenusController(AppDbContext context)
         {
             _context = context;
         }
 
-        // GET: Weddings
+        // GET: Menus
         public async Task<IActionResult> Index()
         {
-            var appDbContext = _context.Weddings.Include(w => w.Template);
+            var appDbContext = _context.Menus.Include(m => m.Restaurant);
             return View(await appDbContext.ToListAsync());
         }
 
-        // GET: Weddings/Details/5
+        // GET: Menus/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -34,42 +34,42 @@ namespace Foreverly.Controllers
                 return NotFound();
             }
 
-            var wedding = await _context.Weddings
-                .Include(w => w.Template)
+            var menu = await _context.Menus
+                .Include(m => m.Restaurant)
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (wedding == null)
+            if (menu == null)
             {
                 return NotFound();
             }
 
-            return View(wedding);
+            return View(menu);
         }
 
-        // GET: Weddings/Create
+        // GET: Menus/Create
         public IActionResult Create()
         {
-            ViewData["TemplateId"] = new SelectList(_context.Templates, "Id", "Id");
+            ViewData["RestaurantId"] = new SelectList(_context.Restaurants, "PartnerId", "PartnerId");
             return View();
         }
 
-        // POST: Weddings/Create
+        // POST: Menus/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,SuggestedDate,ConfirmedDate,Status,ClientName,ClientPhone,ClientEmail,ClientAddress,Notes,TemplateId")] Wedding wedding)
+        public async Task<IActionResult> Create([Bind("Id,RestaurantId,Name,Description,PricePerPerson")] Menu menu)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(wedding);
+                _context.Add(menu);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["TemplateId"] = new SelectList(_context.Templates, "Id", "Id", wedding.TemplateId);
-            return View(wedding);
+            ViewData["RestaurantId"] = new SelectList(_context.Restaurants, "PartnerId", "PartnerId", menu.RestaurantId);
+            return View(menu);
         }
 
-        // GET: Weddings/Edit/5
+        // GET: Menus/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -77,23 +77,23 @@ namespace Foreverly.Controllers
                 return NotFound();
             }
 
-            var wedding = await _context.Weddings.FindAsync(id);
-            if (wedding == null)
+            var menu = await _context.Menus.FindAsync(id);
+            if (menu == null)
             {
                 return NotFound();
             }
-            ViewData["TemplateId"] = new SelectList(_context.Templates, "Id", "Id", wedding.TemplateId);
-            return View(wedding);
+            ViewData["RestaurantId"] = new SelectList(_context.Restaurants, "PartnerId", "PartnerId", menu.RestaurantId);
+            return View(menu);
         }
 
-        // POST: Weddings/Edit/5
+        // POST: Menus/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,SuggestedDate,ConfirmedDate,Status,ClientName,ClientPhone,ClientEmail,ClientAddress,Notes,TemplateId")] Wedding wedding)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,RestaurantId,Name,Description,PricePerPerson")] Menu menu)
         {
-            if (id != wedding.Id)
+            if (id != menu.Id)
             {
                 return NotFound();
             }
@@ -102,12 +102,12 @@ namespace Foreverly.Controllers
             {
                 try
                 {
-                    _context.Update(wedding);
+                    _context.Update(menu);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!WeddingExists(wedding.Id))
+                    if (!MenuExists(menu.Id))
                     {
                         return NotFound();
                     }
@@ -118,11 +118,11 @@ namespace Foreverly.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["TemplateId"] = new SelectList(_context.Templates, "Id", "Id", wedding.TemplateId);
-            return View(wedding);
+            ViewData["RestaurantId"] = new SelectList(_context.Restaurants, "PartnerId", "PartnerId", menu.RestaurantId);
+            return View(menu);
         }
 
-        // GET: Weddings/Delete/5
+        // GET: Menus/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -130,35 +130,35 @@ namespace Foreverly.Controllers
                 return NotFound();
             }
 
-            var wedding = await _context.Weddings
-                .Include(w => w.Template)
+            var menu = await _context.Menus
+                .Include(m => m.Restaurant)
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (wedding == null)
+            if (menu == null)
             {
                 return NotFound();
             }
 
-            return View(wedding);
+            return View(menu);
         }
 
-        // POST: Weddings/Delete/5
+        // POST: Menus/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var wedding = await _context.Weddings.FindAsync(id);
-            if (wedding != null)
+            var menu = await _context.Menus.FindAsync(id);
+            if (menu != null)
             {
-                _context.Weddings.Remove(wedding);
+                _context.Menus.Remove(menu);
             }
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool WeddingExists(int id)
+        private bool MenuExists(int id)
         {
-            return _context.Weddings.Any(e => e.Id == id);
+            return _context.Menus.Any(e => e.Id == id);
         }
     }
 }
