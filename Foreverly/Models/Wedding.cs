@@ -22,6 +22,6 @@ namespace Foreverly.Models
 
         public ICollection<WeddingService> WeddingServices { get; set; } = new List<WeddingService>();
         public ICollection<Guest> Guests { get; set; } = new List<Guest>();
-        public ICollection<WeddingTable> Table { get; set; } = new List<WeddingTable>();
+        public ICollection<WeddingTable> Tables { get; set; } = new List<WeddingTable>();
     }
 }

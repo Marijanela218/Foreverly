@@ -1,0 +1,178 @@
+﻿@model Foreverly.Models.Wedding
+
+@{
+    ViewData["Title"] = "Wedding Details";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="fw-bold">@Model.ClientName</h1>
+        <p class="text-muted mb-0">Wedding details and services overview</p>
+    </div>
+
+    <div>
+        <a asp-action="AddService"
+               asp-route-weddingId="@Model.Id"
+               class="btn btn-primary">
+            + Add Service
+        </a>
+
+        <a asp-action="Edit"
+               asp-route-id="@Model.Id"
+               class="btn btn-outline-warning">
+            Edit
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <h6 class="text-muted">Status</h6>
+                <span class="badge bg-success fs-6">@Model.Status</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <h6 class="text-muted">Confirmed Date</h6>
+                <h5>@Model.ConfirmedDate</h5>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <h6 class="text-muted">Suggested Date</h6>
+                <h5>@Model.SuggestedDate</h5>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="row mb-4">
+
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Client Information</h5>
+            </div>
+
+            <div class="card-body">
+                <p><strong>Name:</strong> @Model.ClientName</p>
+                <p><strong>Phone:</strong> @Model.ClientPhone</p>
+                <p><strong>Email:</strong> @Model.ClientEmail</p>
+                <p><strong>Address:</strong> @Model.ClientAddress</p>
+                <p><strong>Notes:</strong> @(Model.Notes ?? "No notes")</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Wedding Summary</h5>
+            </div>
+
+            <div class="card-body">
+                <p><strong>Template:</strong> @(Model.Template?.Name ?? "No template")</p>
+                <p><strong>Total Services:</strong> @(Model.WeddingServices?.Count ?? 0)</p>
+                <p><strong>Total Price:</strong> @ViewBag.TotalPrice KM</p>
+                <p><strong>Total Commission:</strong> @ViewBag.TotalCommission KM</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Wedding Services</h5>
+
+        <a asp-action="AddService"
+               asp-route-weddingId="@Model.Id"
+               class="btn btn-sm btn-primary">
+            + Add Service
+        </a>
+    </div>
+
+    <div class="card-body">
+
+        @if (Model.WeddingServices != null && Model.WeddingServices.Any())
+        {
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Partner</th>
+                        <th>Type</th>
+                        <th>Quantity</th>
+                        <th>Unit Price</th>
+                        <th>Total</th>
+                        <th>Commission</th>
+                        <th>Confirmed</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var service in Model.WeddingServices)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@service.Partner?.Name</td>
+                            <td>@service.ServiceType</td>
+                            <td>@service.Quantity</td>
+                            <td>@service.UnitPrice KM</td>
+                            <td>@service.TotalPrice KM</td>
+                            <td>@service.CommissionAmount KM</td>
+                            <td>
+                                @if (service.Confirmed)
+                                {
+                                    <span class="badge bg-success">Yes</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">No</span>
+                                }
+                            </td>
+                            <td>
+                                <form asp-action="DeleteService" method="post" class="d-inline">
+                                    <input type="hidden" name="serviceId" value="@service.Id" />
+                                    <input type="hidden" name="weddingId" value="@Model.Id" />
+
+                                    <button type="submit"
+                                            class="btn btn-sm btn-outline-danger"
+                                            onclick="return confirm('Delete this service?');">
+                                        Delete
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p class="text-muted mb-0">No services added for this wedding.</p>
+        }
+
+    </div>
+</div>
+
+<div class="d-flex justify-content-between">
+    <a asp-action="Index" class="btn btn-secondary">
+        Back to List
+    </a>
+
+    <a asp-action="Edit"
+           asp-route-id="@Model.Id"
+           class="btn btn-outline-warning">
+        Edit Wedding
+    </a>
+</div>
