@@ -1,0 +1,225 @@
+﻿@model Foreverly.Models.Wedding
+
+@{
+    ViewData["Title"] = "Seating Plan";
+}
+
+<h1 class="mb-4">Seating Plan</h1>
+
+<div class="row">
+
+    <!-- ================= LEFT SIDE: GUESTS ================= -->
+    <div class="col-md-3">
+
+        <div class="card shadow-sm">
+
+            <div class="card-header">
+                Guests
+            </div>
+
+            <div class="card-body">
+
+                @foreach (var guest in Model.Guests)
+                {
+                    <div class="guest-card mb-2"
+                         draggable="true"
+                         data-guest-id="@guest.Id">
+
+                        @guest.FullName
+
+                    </div>
+                }
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ================= RIGHT SIDE: TABLES ================= -->
+    <div class="col-md-9">
+
+        <div class="row">
+
+            @foreach (var table in Model.Tables)
+            {
+                bool isFull = table.SeatingAssignments.Count >= table.Capacity;
+
+                <div class="col-md-4 mb-4">
+
+                    <div class="table-circle @(isFull ? "table-full" : "")"
+                         data-table-id="@table.Id"
+                         ondragover="allowDrop(event)"
+                         ondrop="drop(event)">
+
+                        <h5>@table.TableName</h5>
+
+                        <small>
+                            @table.SeatingAssignments.Count / @table.Capacity
+                        </small>
+
+                        <hr />
+
+                        @foreach (var seat in table.SeatingAssignments)
+                        {
+                            <div class="badge bg-primary m-1 guest-in-table"
+                                 draggable="true"
+                                 data-guest-id="@seat.GuestId">
+
+                                @seat.Guest.FullName
+
+                            </div>
+                        }
+
+                    </div>
+
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ================= CSS ================= -->
+<style>
+
+    .guest-card {
+        background: #f8f9fa;
+        border: 1px solid #ddd;
+        padding: 10px;
+        border-radius: 10px;
+        cursor: grab;
+        transition: .2s;
+    }
+
+        .guest-card:hover {
+            background: #eef3ff;
+        }
+
+    .guest-in-table {
+        cursor: grab;
+    }
+
+    .table-circle {
+        min-height: 250px;
+        border: 3px solid #d6d6d6;
+        border-radius: 50%;
+        padding: 30px;
+        text-align: center;
+        background: white;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        transition: .2s;
+    }
+
+        .table-circle:hover {
+            border-color: #4e73df;
+            transform: scale(1.02);
+        }
+
+    /* 🔴 FULL TABLE */
+    .table-full {
+        border: 3px solid #dc3545 !important;
+        box-shadow: 0 0 20px rgba(220,53,69,.4);
+    }
+
+    /* 🔵 DRAG HOVER */
+    .table-hover {
+        border-color: #0d6efd !important;
+        box-shadow: 0 0 20px rgba(13,110,253,.35);
+        transform: scale(1.04);
+    }
+
+</style>
+
+<!-- ================= SIGNALR ================= -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+
+<script>
+
+    let draggedGuestId = null;
+
+    // ================= SIGNALR =================
+    const connection = new signalR.HubConnectionBuilder()
+    .withUrl("/seatingHub")
+    .build();
+
+    connection.on("RefreshSeating", function () {
+    location.reload();
+    });
+
+    connection.start()
+    .catch(err => console.error(err));
+
+    // ================= DRAG FROM LEFT =================
+    document.querySelectorAll(".guest-card").forEach(el => {
+    el.addEventListener("dragstart", e => {
+    draggedGuestId = e.target.dataset.guestId;
+    });
+    });
+
+    // ================= DRAG FROM TABLE =================
+    document.querySelectorAll(".guest-in-table").forEach(el => {
+    el.addEventListener("dragstart", e => {
+    draggedGuestId = e.target.dataset.guestId;
+    });
+    });
+
+    // ================= ALLOW DROP =================
+    function allowDrop(ev) {
+    ev.preventDefault();
+    }
+
+    // ================= TABLE HOVER =================
+    document.querySelectorAll(".table-circle").forEach(table => {
+
+    table.addEventListener("dragenter", () => {
+    table.classList.add("table-hover");
+    });
+
+    table.addEventListener("dragleave", () => {
+    table.classList.remove("table-hover");
+    });
+
+    });
+
+    // ================= DROP =================
+    function drop(ev) {
+
+    ev.preventDefault();
+
+    const table = ev.currentTarget;
+    table.classList.remove("table-hover");
+
+    const tableId = table.dataset.tableId;
+
+    fetch('/Seating/AssignGuest', {
+    method: 'POST',
+    headers: {
+    'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+    guestId: parseInt(draggedGuestId),
+    tableId: parseInt(tableId)
+    })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+    if (!data.success) {
+    alert(data.message || "Table is full");
+    return;
+    }
+
+    // SignalR refresh će update-ati UI
+    })
+    .catch(err => {
+    console.error(err);
+    });
+
+    }
+
+</script>

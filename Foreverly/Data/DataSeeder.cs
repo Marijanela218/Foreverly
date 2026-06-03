@@ -149,12 +149,12 @@ public static class DataSeeder
 
         foreach (var w in weddings)
         {
-            for (int i = 1; i <= 5; i++)
+            for (int i = 1; i <= 12; i++)
             {
                 tables.Add(new WeddingTable
                 {
                     WeddingId = w.Id,
-                    TableName = $"Sto {i}",
+                    TableName = $"Table {i}",
                     Capacity = 10
                 });
             }

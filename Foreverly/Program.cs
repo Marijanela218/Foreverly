@@ -1,19 +1,29 @@
 using Foreverly.Data;
+using Foreverly.Hubs;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Services
+// =====================================================
+// SERVICES
+// =====================================================
 builder.Services.AddControllersWithViews();
 
+// DB Context
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection")
     )
 );
 
+// 🔴 SIGNALR (REAL-TIME SEATING)
+builder.Services.AddSignalR();
+
 var app = builder.Build();
 
+// =====================================================
+// SEED DATABASE (DEV ONLY)
+// =====================================================
 if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
@@ -25,6 +35,9 @@ if (app.Environment.IsDevelopment())
     await DataSeeder.SeedAsync(context);
 }
 
+// =====================================================
+// ERROR HANDLING
+// =====================================================
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
@@ -38,8 +51,15 @@ app.UseRouting();
 
 app.UseAuthorization();
 
+// =====================================================
+// ROUTES
+// =====================================================
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Weddings}/{action=Index}/{id?}");
+    pattern: "{controller=Weddings}/{action=Index}/{id?}"
+);
+
+// 🔴 SIGNALR HUB ROUTE
+app.MapHub<SeatingHub>("/seatingHub");
 
 app.Run();
