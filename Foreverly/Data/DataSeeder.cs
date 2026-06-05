@@ -7,8 +7,6 @@ public static class DataSeeder
 {
     public static async Task SeedAsync(AppDbContext context)
     {
-        if (context.PartnerCategories.Any()) return;
-
         var faker = new Faker("hr");
 
         // ─── 1. KATEGORIJE ─────────────────────────────
@@ -91,14 +89,12 @@ public static class DataSeeder
 
         foreach (var r in restaurants)
         {
-            var menu = new Menu
+            menus.Add(new Menu
             {
                 RestaurantId = r.PartnerId,
                 Name = "Svadbeni meni",
                 PricePerPerson = faker.Random.Decimal(30, 80)
-            };
-
-            menus.Add(menu);
+            });
         }
 
         context.Menus.AddRange(menus);
@@ -125,24 +121,28 @@ public static class DataSeeder
         await context.SaveChangesAsync();
 
         // ─── 8. GOSTI ────────────────────────────────
-        var guests = new List<Guest>();
-
-        foreach (var w in weddings)
+        // 🔥 FIX: uvijek generiši goste ako ih nema
+        if (!context.Guests.Any())
         {
-            for (int i = 0; i < 20; i++)
-            {
-                guests.Add(new Guest
-                {
-                    WeddingId = w.Id,
-                    FullName = faker.Name.FullName(),
-                    Side = faker.PickRandom(new[] { "Bride", "Groom" }),
-                    Phone = faker.Phone.PhoneNumber()
-                });
-            }
-        }
+            var guests = new List<Guest>();
 
-        context.Guests.AddRange(guests);
-        await context.SaveChangesAsync();
+            foreach (var w in weddings)
+            {
+                for (int i = 0; i < 50; i++)
+                {
+                    guests.Add(new Guest
+                    {
+                        WeddingId = w.Id,
+                        FullName = faker.Name.FullName(),
+                        Side = faker.PickRandom(new[] { "Bride", "Groom" }),
+                        Phone = faker.Phone.PhoneNumber()
+                    });
+                }
+            }
+
+            context.Guests.AddRange(guests);
+            await context.SaveChangesAsync();
+        }
 
         // ─── 9. STOLOVI ──────────────────────────────
         var tables = new List<WeddingTable>();
@@ -161,134 +161,6 @@ public static class DataSeeder
         }
 
         context.WeddingTables.AddRange(tables);
-        await context.SaveChangesAsync();
-
-        // ─── 10. USLUGE ──────────────────────────────
-        var services = new List<WeddingService>();
-
-        foreach (var w in weddings)
-        {
-            var randomPartner = faker.PickRandom(partners);
-
-            services.Add(new WeddingService
-            {
-                WeddingId = w.Id,
-                PartnerId = randomPartner.Id,
-                ServiceType = "General",
-                Quantity = 1,
-                UnitPrice = faker.Random.Decimal(500, 2000),
-                TotalPrice = faker.Random.Decimal(500, 2000),
-                CommissionPercent = 10,
-                CommissionAmount = 100,
-                Confirmed = true
-            });
-        }
-
-        context.WeddingServices.AddRange(services);
-        await context.SaveChangesAsync();
-        // ─── 11. SONG GROUPS ─────────────────────────────
-        var songGroups = new List<SongGroup>
-{
-    new() { Name = "80s Rock", Description = "Rock klasici" },
-    new() { Name = "Pop", Description = "Popularna muzika" },
-    new() { Name = "Narodna", Description = "Balkanska muzika" }
-};
-
-        context.SongGroups.AddRange(songGroups);
-        await context.SaveChangesAsync();
-
-
-        // ─── 12. SONGS ───────────────────────────────────
-        var songs = new List<Song>();
-
-        for (int i = 0; i < 20; i++)
-        {
-            songs.Add(new Song
-            {
-                Title = faker.Music.Genre() + " Song",
-                Artist = faker.Name.FullName(),
-                Genre = faker.Music.Genre()
-            });
-        }
-
-        context.Songs.AddRange(songs);
-        await context.SaveChangesAsync();
-
-
-        // ─── 13. PLAYLISTS ───────────────────────────────
-        var playlists = new List<Playlist>();
-
-        foreach (var band in bands)
-        {
-            playlists.Add(new Playlist
-            {
-                BandId = band.PartnerId,
-                Name = "Svadbena playlist",
-                Description = "Top pjesme za svadbu"
-            });
-        }
-
-        context.Playlists.AddRange(playlists);
-        await context.SaveChangesAsync();
-
-
-        // ─── 14. PLAYLIST ITEMS ──────────────────────────
-        var playlistItems = new List<PlaylistItem>();
-
-        foreach (var pl in playlists)
-        {
-            for (int i = 0; i < 10; i++)
-            {
-                playlistItems.Add(new PlaylistItem
-                {
-                    PlaylistId = pl.Id,
-                    SongId = faker.PickRandom(songs).Id
-                });
-            }
-        }
-
-        context.PlaylistItems.AddRange(playlistItems);
-        await context.SaveChangesAsync();
-
-
-        // ─── 15. FLORAL ARRANGEMENTS ─────────────────────
-        var floralPartners = partners.Where(p => p.CategoryId == categories[1].Id).ToList();
-
-        var florals = new List<FloralArrangement>();
-
-        foreach (var p in floralPartners)
-        {
-            florals.Add(new FloralArrangement
-            {
-                PartnerId = p.Id,
-                Name = "Dekoracija stolova",
-                Description = "Cvjetni aranžman",
-                BasePrice = faker.Random.Decimal(50, 200)
-            });
-        }
-
-        context.FloralArrangements.AddRange(florals);
-        await context.SaveChangesAsync();
-
-
-        // ─── 16. PASTRY ITEMS ────────────────────────────
-        var pastryPartners = partners.Where(p => p.CategoryId == categories[3].Id).ToList();
-
-        var pastries = new List<PastryItem>();
-
-        foreach (var p in pastryPartners)
-        {
-            pastries.Add(new PastryItem
-            {
-                PartnerId = p.Id,
-                Name = "Svadbena torta",
-                Type = "Cake",
-                Description = "Velika torta",
-                BasePrice = faker.Random.Decimal(100, 500)
-            });
-        }
-
-        context.PastryItems.AddRange(pastries);
         await context.SaveChangesAsync();
     }
 }

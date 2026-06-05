@@ -2,30 +2,44 @@
 
 @{
     ViewData["Title"] = "Seating Plan";
+    var tables = Model.Tables.ToList();
 }
 
 <h1 class="mb-4">Seating Plan</h1>
 
 <div class="row">
 
-    <!-- ================= LEFT SIDE: GUESTS ================= -->
+    <!-- GUESTS -->
     <div class="col-md-3">
 
         <div class="card shadow-sm">
 
-            <div class="card-header">
-                Guests
+            <div class="card-header d-flex justify-content-between align-items-center">
+
+                <span>Guests</span>
+
+                <button class="btn btn-sm btn-success"
+                        onclick="showAddGuestModal()">
+                    + Add Guest
+                </button>
+
             </div>
 
             <div class="card-body">
 
-                @foreach (var guest in Model.Guests)
+                @foreach (var guest in Model.Guests.OrderBy(g => g.FullName))
                 {
-                    <div class="guest-card mb-2"
+                    <div class="guest-card mb-2 d-flex justify-content-between align-items-center"
                          draggable="true"
                          data-guest-id="@guest.Id">
 
-                        @guest.FullName
+                        <span>@guest.FullName</span>
+
+                        <button type="button"
+                                class="btn btn-sm btn-outline-danger"
+                                onclick="deleteGuest(@guest.Id)">
+                            ✕
+                        </button>
 
                     </div>
                 }
@@ -36,13 +50,14 @@
 
     </div>
 
-    <!-- ================= RIGHT SIDE: TABLES ================= -->
+    <!-- TABLES -->
     <div class="col-md-9">
 
         <div class="row">
 
-            @foreach (var table in Model.Tables)
+            @for (int i = 0; i < tables.Count; i++)
             {
+                var table = tables[i];
                 bool isFull = table.SeatingAssignments.Count >= table.Capacity;
 
                 <div class="col-md-4 mb-4">
@@ -52,7 +67,7 @@
                          ondragover="allowDrop(event)"
                          ondrop="drop(event)">
 
-                        <h5>@table.TableName</h5>
+                        <h5>Table @(i + 1)</h5>
 
                         <small>
                             @table.SeatingAssignments.Count / @table.Capacity
@@ -82,7 +97,55 @@
 
 </div>
 
-<!-- ================= CSS ================= -->
+<!-- ADD GUEST MODAL -->
+
+<div class="modal fade"
+     id="addGuestModal"
+     tabindex="-1">
+
+    <div class="modal-dialog">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Add Guest</h5>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal">
+                </button>
+            </div>
+
+            <div class="modal-body">
+
+                <input id="guestName"
+                       class="form-control"
+                       placeholder="Name and Surname" />
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                    Cancel
+                </button>
+
+                <button type="button"
+                        class="btn btn-success"
+                        onclick="addGuest()">
+                    Add
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
 <style>
 
     .guest-card {
@@ -120,13 +183,11 @@
             transform: scale(1.02);
         }
 
-    /* 🔴 FULL TABLE */
     .table-full {
         border: 3px solid #dc3545 !important;
         box-shadow: 0 0 20px rgba(220,53,69,.4);
     }
 
-    /* 🔵 DRAG HOVER */
     .table-hover {
         border-color: #0d6efd !important;
         box-shadow: 0 0 20px rgba(13,110,253,.35);
@@ -135,14 +196,14 @@
 
 </style>
 
-<!-- ================= SIGNALR ================= -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
 
 <script>
 
+    const weddingId = @Model.Id;
+
     let draggedGuestId = null;
 
-    // ================= SIGNALR =================
     const connection = new signalR.HubConnectionBuilder()
     .withUrl("/seatingHub")
     .build();
@@ -154,26 +215,32 @@
     connection.start()
     .catch(err => console.error(err));
 
-    // ================= DRAG FROM LEFT =================
     document.querySelectorAll(".guest-card").forEach(el => {
+
     el.addEventListener("dragstart", e => {
-    draggedGuestId = e.target.dataset.guestId;
-    });
+
+    draggedGuestId =
+    e.currentTarget.dataset.guestId;
+
     });
 
-    // ================= DRAG FROM TABLE =================
+    });
+
     document.querySelectorAll(".guest-in-table").forEach(el => {
+
     el.addEventListener("dragstart", e => {
-    draggedGuestId = e.target.dataset.guestId;
-    });
+
+    draggedGuestId =
+    e.currentTarget.dataset.guestId;
+
     });
 
-    // ================= ALLOW DROP =================
+    });
+
     function allowDrop(ev) {
     ev.preventDefault();
     }
 
-    // ================= TABLE HOVER =================
     document.querySelectorAll(".table-circle").forEach(table => {
 
     table.addEventListener("dragenter", () => {
@@ -186,38 +253,102 @@
 
     });
 
-    // ================= DROP =================
     function drop(ev) {
 
     ev.preventDefault();
 
     const table = ev.currentTarget;
+
     table.classList.remove("table-hover");
 
     const tableId = table.dataset.tableId;
 
     fetch('/Seating/AssignGuest', {
+
     method: 'POST',
+
     headers: {
     'Content-Type': 'application/json'
     },
+
     body: JSON.stringify({
     guestId: parseInt(draggedGuestId),
     tableId: parseInt(tableId)
     })
+
     })
     .then(res => res.json())
     .then(data => {
 
     if (!data.success) {
     alert(data.message || "Table is full");
+    }
+
+    });
+
+    }
+
+    function showAddGuestModal() {
+
+    const modal = new bootstrap.Modal(
+    document.getElementById('addGuestModal')
+    );
+
+    modal.show();
+    }
+
+    function addGuest() {
+
+    const fullName =
+    document.getElementById('guestName').value.trim();
+
+    if (!fullName) {
+    alert("Enter guest name");
     return;
     }
 
-    // SignalR refresh će update-ati UI
+    fetch('/Seating/AddGuest', {
+
+    method: 'POST',
+
+    headers: {
+    'Content-Type': 'application/json'
+    },
+
+    body: JSON.stringify({
+    weddingId: weddingId,
+    fullName: fullName
     })
-    .catch(err => {
-    console.error(err);
+
+    })
+    .then(r => r.json())
+    .then(data => {
+
+    if (data.success) {
+    location.reload();
+    }
+
+    });
+
+    }
+
+    function deleteGuest(id) {
+
+    if (!confirm("Delete guest?"))
+    return;
+
+    fetch('/Seating/DeleteGuest/' + id, {
+
+    method: 'POST'
+
+    })
+    .then(r => r.json())
+    .then(data => {
+
+    if (data.success) {
+    location.reload();
+    }
+
     });
 
     }

@@ -10,18 +10,27 @@
         <p class="text-muted mb-0">Wedding details and services overview</p>
     </div>
 
-    <div>
+    <div class="d-flex gap-2">
+
+        <a asp-controller="Seating"
+           asp-action="Index"
+           asp-route-id="@Model.Id"
+           class="btn btn-success">
+            Seating Plan
+        </a>
+
         <a asp-action="AddService"
-               asp-route-weddingId="@Model.Id"
-               class="btn btn-primary">
+           asp-route-weddingId="@Model.Id"
+           class="btn btn-primary">
             + Add Service
         </a>
 
         <a asp-action="Edit"
-               asp-route-id="@Model.Id"
-               class="btn btn-outline-warning">
+           asp-route-id="@Model.Id"
+           class="btn btn-outline-warning">
             Edit
         </a>
+
     </div>
 </div>
 
@@ -96,8 +105,8 @@
         <h5 class="mb-0">Wedding Services</h5>
 
         <a asp-action="AddService"
-               asp-route-weddingId="@Model.Id"
-               class="btn btn-sm btn-primary">
+           asp-route-weddingId="@Model.Id"
+           class="btn btn-sm btn-primary">
             + Add Service
         </a>
     </div>
@@ -171,8 +180,8 @@
     </a>
 
     <a asp-action="Edit"
-           asp-route-id="@Model.Id"
-           class="btn btn-outline-warning">
+       asp-route-id="@Model.Id"
+       class="btn btn-outline-warning">
         Edit Wedding
     </a>
 </div>

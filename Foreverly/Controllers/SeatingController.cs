@@ -12,15 +12,14 @@ namespace Foreverly.Controllers
         private readonly AppDbContext _context;
         private readonly IHubContext<SeatingHub> _hub;
 
+        private const int CapacityPerTable = 10;
+
         public SeatingController(AppDbContext context, IHubContext<SeatingHub> hub)
         {
             _context = context;
             _hub = hub;
         }
 
-        // ================================
-        // PAGE
-        // ================================
         public async Task<IActionResult> Index(int id)
         {
             var wedding = await _context.Weddings
@@ -33,12 +32,79 @@ namespace Foreverly.Controllers
             if (wedding == null)
                 return NotFound();
 
+            int neededTables =
+                (int)Math.Ceiling(wedding.Guests.Count / (double)CapacityPerTable);
+
+            int existingTables = wedding.Tables.Count;
+
+            if (existingTables < neededTables)
+            {
+                for (int i = existingTables + 1; i <= neededTables; i++)
+                {
+                    _context.WeddingTables.Add(new WeddingTable
+                    {
+                        WeddingId = wedding.Id,
+                        TableName = $"Table {i}",
+                        Capacity = CapacityPerTable
+                    });
+                }
+
+                await _context.SaveChangesAsync();
+
+                wedding = await _context.Weddings
+                    .Include(w => w.Guests)
+                    .Include(w => w.Tables)
+                        .ThenInclude(t => t.SeatingAssignments)
+                            .ThenInclude(sa => sa.Guest)
+                    .FirstOrDefaultAsync(w => w.Id == id);
+            }
+
             return View(wedding);
         }
 
-        // ================================
-        // ASSIGN / MOVE GUEST
-        // ================================
+        [HttpPost]
+        public async Task<IActionResult> AddGuest([FromBody] AddGuestDto dto)
+        {
+            var guest = new Guest
+            {
+                WeddingId = dto.WeddingId,
+                FullName = dto.FullName,
+                Side = ""
+            };
+
+            _context.Guests.Add(guest);
+
+            await _context.SaveChangesAsync();
+
+            await _hub.Clients.All.SendAsync("RefreshSeating");
+
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteGuest(int id)
+        {
+            var guest = await _context.Guests
+                .FirstOrDefaultAsync(g => g.Id == id);
+
+            if (guest == null)
+                return Json(new { success = false });
+
+            var assignment = await _context.SeatingAssignments
+                .FirstOrDefaultAsync(x => x.GuestId == id);
+
+            if (assignment != null)
+                _context.SeatingAssignments.Remove(assignment);
+
+            _context.Guests.Remove(guest);
+
+            await _context.SaveChangesAsync();
+
+            await _hub.Clients.All.SendAsync("RefreshSeating");
+
+            return Json(new { success = true });
+        }
+
         [HttpPost]
         public async Task<IActionResult> AssignGuest([FromBody] AssignGuestDto dto)
         {
@@ -50,9 +116,8 @@ namespace Foreverly.Controllers
                 .FirstOrDefaultAsync(t => t.Id == dto.TableId);
 
             if (table == null)
-                return Json(new { success = false, message = "Table not found" });
+                return Json(new { success = false });
 
-            // 🔴 CAPACITY CHECK
             if (table.SeatingAssignments.Count >= table.Capacity)
             {
                 return Json(new
@@ -62,37 +127,26 @@ namespace Foreverly.Controllers
                 });
             }
 
-            // 🔴 remove old assignment (MOVE logic)
             var existing = await _context.SeatingAssignments
                 .FirstOrDefaultAsync(x => x.GuestId == dto.GuestId);
 
             if (existing != null)
                 _context.SeatingAssignments.Remove(existing);
 
-            // 🔴 seat number
-            var seatNumber = table.SeatingAssignments.Count + 1;
-
             var assignment = new SeatingAssignment
             {
                 GuestId = dto.GuestId,
                 TableId = dto.TableId,
-                SeatNumber = seatNumber
+                SeatNumber = table.SeatingAssignments.Count + 1
             };
 
             _context.SeatingAssignments.Add(assignment);
 
             await _context.SaveChangesAsync();
 
-            // 🔴 REAL TIME UPDATE
             await _hub.Clients.All.SendAsync("RefreshSeating");
 
-            return Json(new
-            {
-                success = true,
-                tableId = dto.TableId,
-                guestId = dto.GuestId,
-                seatNumber = seatNumber
-            });
+            return Json(new { success = true });
         }
     }
 }

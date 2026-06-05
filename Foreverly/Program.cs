@@ -21,6 +21,22 @@ builder.Services.AddSignalR();
 
 var app = builder.Build();
 
+
+// =====================================================
+// 🔍 DEBUG DB CONNECTION (TEMPORARY)
+// =====================================================
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var conn = db.Database.GetDbConnection();
+
+    await conn.OpenAsync();
+
+    Console.WriteLine("DB NAME: " + conn.Database);
+    Console.WriteLine("DATA SOURCE: " + conn.DataSource);
+}
+
+
 // =====================================================
 // SEED DATABASE (DEV ONLY)
 // =====================================================
