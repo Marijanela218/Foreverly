@@ -15,43 +15,79 @@
         <div class="card shadow-sm">
 
             <div class="card-header d-flex justify-content-between align-items-center">
-
                 <span>Guests</span>
 
                 <button class="btn btn-sm btn-success"
                         onclick="showAddGuestModal()">
                     + Add Guest
                 </button>
-
             </div>
 
             <div class="card-body">
 
-                @foreach (var guest in Model.Guests.OrderBy(g => g.FullName))
-                {
-                    <div class="guest-card mb-2 d-flex justify-content-between align-items-center"
-                         draggable="true"
-                         data-guest-id="@guest.Id">
+                <input id="guestSearch"
+                       class="form-control mb-3"
+                       placeholder="Search guest..."
+                       oninput="filterGuests()" />
 
-                        <span>@guest.FullName</span>
+                <!-- EMPTY STATE -->
+                <div id="noGuestsMessage"
+                     style="display:none; color:#dc3545; font-weight:600; margin-bottom:10px;">
+                    No guests found
+                </div>
 
-                        <button type="button"
-                                class="btn btn-sm btn-outline-danger"
-                                onclick="deleteGuest(@guest.Id)">
-                            ✕
-                        </button>
+                <!-- LIST WRAPPER -->
+                <div id="guestList">
 
-                    </div>
-                }
+                    @foreach (var guest in Model.Guests.OrderBy(g => g.FullName))
+                    {
+                        <div class="guest-card mb-2 d-flex justify-content-between align-items-center"
+                             draggable="true"
+                             data-guest-id="@guest.Id">
+
+                            <div>
+                                <strong class="guest-name">@guest.FullName</strong>
+
+                                @if (!string.IsNullOrEmpty(guest.Side))
+                                {
+                                    <small class="text-muted">
+                                        (@guest.Side)
+                                    </small>
+                                }
+                            </div>
+
+                            <div>
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-primary"
+                                        onclick="showEditGuestModal(@guest.Id)">
+                                    ✏️
+                                </button>
+
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger"
+                                        onclick="deleteGuest(@guest.Id)">
+                                    ✕
+                                </button>
+                            </div>
+
+                        </div>
+                    }
+
+                </div>
 
             </div>
-
         </div>
-
     </div>
 
+ 
     <!-- TABLES -->
     <div class="col-md-9">
+
+        <div class="d-flex justify-content-end mb-3">
+            <button class="btn btn-success" onclick="showAddTableModal()">
+                + Add Table
+            </button>
+        </div>
 
         <div class="row">
 
@@ -67,24 +103,44 @@
                          ondragover="allowDrop(event)"
                          ondrop="drop(event)">
 
-                        <h5>Table @(i + 1)</h5>
-
-                        <small>
+                        <!-- TOP: CAPACITY -->
+                        <small class="text-muted">
                             @table.SeatingAssignments.Count / @table.Capacity
                         </small>
 
-                        <hr />
+                        <!-- MIDDLE DROP ZONE -->
+                        <div class="table-guests" id="table-guests-@table.Id">
 
-                        @foreach (var seat in table.SeatingAssignments)
-                        {
-                            <div class="badge bg-primary m-1 guest-in-table"
-                                 draggable="true"
-                                 data-guest-id="@seat.GuestId">
+                            @foreach (var seat in table.SeatingAssignments)
+                            {
+                                <div class="badge bg-primary m-1 guest-in-table"
+                                     data-guest-id="@seat.GuestId"
+                                     draggable="true">
+                                    @seat.Guest.FullName
+                                </div>
+                            }
 
-                                @seat.Guest.FullName
+                        </div>
 
-                            </div>
-                        }
+                        <!-- CENTER NAME -->
+                        <div class="table-name-center">
+                            @(string.IsNullOrEmpty(table.TableName)
+                                ? $"Table {i + 1}"
+                                : table.TableName)
+                        </div>
+
+                        <!-- BOTTOM ACTIONS -->
+                        <div class="table-actions mt-2">
+                            <button class="btn btn-sm btn-outline-primary"
+                                    onclick="editTable(@table.Id, @table.Capacity, '@(table.TableName?.Replace("'", "\\'"))')">
+                                ✏️
+                            </button>
+
+                            <button class="btn btn-sm btn-outline-danger"
+                                    onclick="deleteTable(@table.Id)">
+                                ✕
+                            </button>
+                        </div>
 
                     </div>
 
@@ -92,9 +148,54 @@
             }
 
         </div>
-
     </div>
 
+<!-- TABLE MODAL -->
+<div class="modal fade" id="tableModal" tabindex="-1">
+
+    <div class="modal-dialog">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Table</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <input type="hidden" id="tableId" />
+
+                <label>Table name</label>
+                <input id="tableName" class="form-control mb-2" />
+
+                <label>Capacity</label>
+                <input id="tableCapacity" type="number" class="form-control mb-2" />
+
+                <label>Side</label>
+                <select id="tableSide" class="form-select">
+                    <option value="">None</option>
+                    <option value="Bride">Bride</option>
+                    <option value="Groom">Groom</option>
+                </select>
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button class="btn btn-secondary" data-bs-dismiss="modal">
+                    Cancel
+                </button>
+
+                <button class="btn btn-primary" onclick="saveTable()">
+                    Save
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
 </div>
 
 <!-- ADD GUEST MODAL -->
@@ -146,54 +247,157 @@
 
 </div>
 
+<div class="modal fade"
+     id="editGuestModal"
+     tabindex="-1">
+
+    <div class="modal-dialog">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title">
+                    Edit Guest
+                </h5>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+            <div class="modal-body">
+
+                <input type="hidden"
+                       id="editGuestId" />
+
+                <label>Name & Surname</label>
+
+                <input id="editGuestName"
+                       class="form-control mb-3" />
+
+                <label>Side</label>
+
+                <select id="editGuestSide"
+                        class="form-select">
+
+                    <option value="">Select side</option>
+                    <option value="Bride">Bride</option>
+                    <option value="Groom">Groom</option>
+
+                </select>
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                    Cancel
+                </button>
+
+                <button class="btn btn-primary"
+                        onclick="saveGuestEdit()">
+                    Save
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
 <style>
 
-    .guest-card {
-        background: #f8f9fa;
-        border: 1px solid #ddd;
-        padding: 10px;
-        border-radius: 10px;
-        cursor: grab;
-        transition: .2s;
-    }
+            /* ---------------- GUEST CARD ---------------- */
+            .guest-card {
+                background: #f8f9fa;
+                border: 1px solid #ddd;
+                padding: 10px;
+                border-radius: 10px;
+                cursor: grab;
+                transition: .2s;
+            }
 
-        .guest-card:hover {
-            background: #eef3ff;
-        }
+                .guest-card:hover {
+                    background: #eef3ff;
+                }
 
-    .guest-in-table {
-        cursor: grab;
-    }
+            .guest-in-table {
+                cursor: grab;
+                font-size: 13px;
+            }
 
-    .table-circle {
-        min-height: 250px;
-        border: 3px solid #d6d6d6;
-        border-radius: 50%;
-        padding: 30px;
-        text-align: center;
-        background: white;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        transition: .2s;
-    }
+            /* ---------------- TABLE ---------------- */
+            .table-circle {
+                height: 280px;
+                border: 3px solid #d6d6d6;
+                border-radius: 50%;
+                background: white;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                align-items: center;
+                padding: 15px;
+                text-align: center;
+                transition: .2s;
+                position: relative;
+            }
 
-        .table-circle:hover {
-            border-color: #4e73df;
-            transform: scale(1.02);
-        }
+                /* hover */
+                .table-circle:hover {
+                    border-color: #4e73df;
+                    transform: scale(1.02);
+                }
 
-    .table-full {
-        border: 3px solid #dc3545 !important;
-        box-shadow: 0 0 20px rgba(220,53,69,.4);
-    }
+            /* full */
+            .table-full {
+                border: 3px solid #dc3545 !important;
+                box-shadow: 0 0 20px rgba(220,53,69,.4);
+            }
 
-    .table-hover {
-        border-color: #0d6efd !important;
-        box-shadow: 0 0 20px rgba(13,110,253,.35);
-        transform: scale(1.04);
-    }
+            /* drag hover */
+            .table-hover {
+                border-color: #0d6efd !important;
+                box-shadow: 0 0 20px rgba(13,110,253,.35);
+            }
 
+            /* ---------------- CENTER NAME ---------------- */
+            .table-name-center {
+                font-weight: 700;
+                font-size: 16px;
+                margin: 5px 0;
+            }
+
+            /* ---------------- GUESTS AREA ---------------- */
+            .table-guests {
+                flex: 1;
+                width: 100%;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                align-content: center;
+                gap: 5px;
+                overflow-y: auto;
+                max-height: 140px;
+            }
+
+            /* ---------------- ACTIONS ---------------- */
+            .table-actions {
+                width: 100%;
+            }
+
+            /* ---------------- RESPONSIVE ---------------- */
+            @@media (max-width: 768px) {
+                .table-circle {
+                    height: 240px;
+                    border-radius: 25px;
+                }
+            }
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
@@ -204,42 +408,38 @@
 
     let draggedGuestId = null;
 
+    // ---------------- SIGNALR ----------------
     const connection = new signalR.HubConnectionBuilder()
     .withUrl("/seatingHub")
     .build();
 
-    connection.on("RefreshSeating", function () {
-    location.reload();
-    });
+        connection.on("RefreshSeating", function () {
+        // samo sync UI, ne reload
+        location.reload();
+        });
 
     connection.start()
     .catch(err => console.error(err));
 
-    document.querySelectorAll(".guest-card").forEach(el => {
-
-    el.addEventListener("dragstart", e => {
-
-    draggedGuestId =
-    e.currentTarget.dataset.guestId;
-
-    });
-
-    });
-
-    document.querySelectorAll(".guest-in-table").forEach(el => {
-
-    el.addEventListener("dragstart", e => {
-
-    draggedGuestId =
-    e.currentTarget.dataset.guestId;
-
-    });
-
-    });
-
-    function allowDrop(ev) {
-    ev.preventDefault();
+    // ---------------- DRAG ----------------
+    function handleDragStart(e) {
+    draggedGuestId = e.currentTarget.dataset.guestId;
     }
+
+    function initDrag() {
+
+    document.querySelectorAll(".guest-card, .guest-in-table").forEach(el => {
+
+    el.removeEventListener("dragstart", handleDragStart);
+    el.addEventListener("dragstart", handleDragStart);
+
+    });
+    }
+
+    document.addEventListener("DOMContentLoaded", initDrag);
+
+    // ---------------- TABLE EFFECTS ----------------
+    document.addEventListener("DOMContentLoaded", function () {
 
     document.querySelectorAll(".table-circle").forEach(table => {
 
@@ -253,41 +453,43 @@
 
     });
 
-    function drop(ev) {
-
-    ev.preventDefault();
-
-    const table = ev.currentTarget;
-
-    table.classList.remove("table-hover");
-
-    const tableId = table.dataset.tableId;
-
-    fetch('/Seating/AssignGuest', {
-
-    method: 'POST',
-
-    headers: {
-    'Content-Type': 'application/json'
-    },
-
-    body: JSON.stringify({
-    guestId: parseInt(draggedGuestId),
-    tableId: parseInt(tableId)
-    })
-
-    })
-    .then(res => res.json())
-    .then(data => {
-
-    if (!data.success) {
-    alert(data.message || "Table is full");
-    }
-
     });
 
+    // ---------------- DROP ----------------
+    function allowDrop(ev) {
+    ev.preventDefault();
     }
 
+        function drop(ev) {
+        ev.preventDefault();
+
+        const table = ev.currentTarget;
+        table.classList.remove("table-hover");
+
+        const tableId = parseInt(table.dataset.tableId);
+
+        fetch('/Seating/AssignGuest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+        guestId: parseInt(draggedGuestId),
+        tableId: tableId
+        })
+        })
+        .then(res => res.json())
+        .then(data => {
+
+        if (!data.success) {
+        alert(data.message || "Table is full");
+        return;
+        }
+
+        // 🔥 INSTANT UI UPDATE (bez reload-a)
+        moveGuestToTable(draggedGuestId, tableId);
+        });
+        }
+
+    // ---------------- ADD GUEST ----------------
     function showAddGuestModal() {
 
     const modal = new bootstrap.Modal(
@@ -299,8 +501,7 @@
 
     function addGuest() {
 
-    const fullName =
-    document.getElementById('guestName').value.trim();
+    const fullName = document.getElementById('guestName').value.trim();
 
     if (!fullName) {
     alert("Enter guest name");
@@ -308,18 +509,12 @@
     }
 
     fetch('/Seating/AddGuest', {
-
     method: 'POST',
-
-    headers: {
-    'Content-Type': 'application/json'
-    },
-
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
     weddingId: weddingId,
     fullName: fullName
     })
-
     })
     .then(r => r.json())
     .then(data => {
@@ -332,15 +527,13 @@
 
     }
 
+    // ---------------- DELETE ----------------
     function deleteGuest(id) {
 
-    if (!confirm("Delete guest?"))
-    return;
+    if (!confirm("Delete guest?")) return;
 
     fetch('/Seating/DeleteGuest/' + id, {
-
     method: 'POST'
-
     })
     .then(r => r.json())
     .then(data => {
@@ -352,5 +545,189 @@
     });
 
     }
+
+    // ---------------- SEARCH (FIXED) ----------------
+    function filterGuests() {
+
+    const search = document.getElementById('guestSearch')
+    .value
+    .toLowerCase()
+    .trim();
+
+    const cards = document.querySelectorAll('.guest-card');
+
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+
+    const nameEl = card.querySelector('.guest-name');
+
+    const name = (nameEl?.textContent || "")
+    .toLowerCase()
+    .trim();
+
+    const match =
+    search === "" ||
+    name.startsWith(search);
+
+    // Bootstrap-safe hide/show
+    card.classList.toggle("d-none", !match);
+
+    if (match) visibleCount++;
+    });
+
+    document.getElementById("noGuestsMessage").style.display =
+    (search !== "" && visibleCount === 0) ? "block" : "none";
+    }
+    // ---------------- EDIT ----------------
+    function showEditGuestModal(id) {
+
+    fetch('/Seating/GetGuest?id=' + id)
+    .then(r => r.json())
+    .then(data => {
+
+    if (!data.success) return;
+
+    document.getElementById('editGuestId').value = data.guestId;
+    document.getElementById('editGuestName').value = data.fullName;
+    document.getElementById('editGuestSide').value = data.side ?? '';
+
+    const modal = new bootstrap.Modal(
+    document.getElementById('editGuestModal')
+    );
+
+    modal.show();
+    });
+
+    }
+
+    function saveGuestEdit() {
+
+    fetch('/Seating/EditGuest', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+
+    body: JSON.stringify({
+    guestId: parseInt(document.getElementById('editGuestId').value),
+    fullName: document.getElementById('editGuestName').value,
+    side: document.getElementById('editGuestSide').value
+    })
+    })
+    .then(r => r.json())
+    .then(data => {
+
+    if (data.success) {
+    location.reload();
+    }
+
+    });
+
+    }
+
+    // ---------------- TABLE MODAL ----------------
+
+    function showAddTableModal() {
+
+    document.getElementById("tableId").value = "";
+    document.getElementById("tableName").value = "";
+    document.getElementById("tableCapacity").value = 10;
+    document.getElementById("tableSide").value = "";
+
+    new bootstrap.Modal(document.getElementById("tableModal")).show();
+    }
+
+    function editTable(id, capacity, name) {
+
+    document.getElementById("tableId").value = id;
+    document.getElementById("tableName").value = name;
+    document.getElementById("tableCapacity").value = capacity;
+    document.getElementById("tableSide").value = "";
+
+    new bootstrap.Modal(document.getElementById("tableModal")).show();
+    }
+
+    function saveTable() {
+
+    fetch('/Seating/SaveTable', {
+
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+
+    body: JSON.stringify({
+    id: parseInt(document.getElementById("tableId").value || 0),
+    weddingId: weddingId,
+    tableName: document.getElementById("tableName").value,
+    capacity: parseInt(document.getElementById("tableCapacity").value),
+    side: document.getElementById("tableSide").value
+    })
+
+    })
+    .then(r => r.json())
+    .then(data => {
+
+    if (data.success) {
+    location.reload();
+    }
+
+    });
+    }
+
+    function deleteTable(id) {
+
+    if (!confirm("Delete table?")) return;
+
+    fetch('/Seating/DeleteTable/' + id, {
+    method: 'POST'
+    })
+    .then(r => r.json())
+    .then(data => {
+
+    if (data.success) {
+    location.reload();
+    }
+
+    });
+    }
+
+        function reloadTables() {
+
+        fetch(window.location.href)
+        .then(r => r.text())
+        .then(html => {
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+
+        const newTables = doc.querySelector(".col-md-9");
+        const oldTables = document.querySelector(".col-md-9");
+
+        oldTables.innerHTML = newTables.innerHTML;
+
+        initDrag();
+        });
+        }
+        function moveGuestToTable(guestId, tableId) {
+
+        // nađi guest card
+        const guestCard = document.querySelector(`[data-guest-id="${guestId}"]`);
+
+        if (!guestCard) return;
+
+        // makni iz liste
+        guestCard.remove();
+
+        // napravi badge za stol
+        const badge = document.createElement("div");
+        badge.className = "badge bg-primary m-1 guest-in-table";
+        badge.draggable = true;
+        badge.dataset.guestId = guestId;
+        badge.textContent = guestCard.querySelector(".guest-name")?.innerText || "Guest";
+
+        // ubaci u table
+        const container = document.getElementById(`table-guests-${tableId}`);
+        container.appendChild(badge);
+
+        initDrag();
+        }
 
 </script>
