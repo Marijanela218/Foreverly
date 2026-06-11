@@ -11,42 +11,35 @@
     </div>
 
     <div class="d-flex gap-2">
-
         <a asp-controller="Seating"
-           asp-action="Index"
-           asp-route-id="@Model.Id"
-           class="btn btn-success">
+               asp-action="Index"
+               asp-route-id="@Model.Id"
+               class="btn btn-success">
             Seating Plan
         </a>
 
-        <a asp-action="AddService"
-           asp-route-weddingId="@Model.Id"
-           class="btn btn-primary">
-            + Add Service
-        </a>
-
         <a asp-action="Edit"
-           asp-route-id="@Model.Id"
-           class="btn btn-outline-warning">
+               asp-route-id="@Model.Id"
+               class="btn btn-outline-warning">
             Edit
         </a>
-
     </div>
 </div>
 
 <div class="row mb-4">
-
-    <div class="col-md-4">
-        <div class="card shadow-sm border-0">
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 rounded-4">
             <div class="card-body">
                 <h6 class="text-muted">Status</h6>
-                <span class="badge bg-success fs-6">@Model.Status</span>
+                <span class="badge @(Model.Status == "Confirmed" ? "bg-success" : "bg-warning text-dark") fs-6">
+                    @Model.Status
+                </span>
             </div>
         </div>
     </div>
 
-    <div class="col-md-4">
-        <div class="card shadow-sm border-0">
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 rounded-4">
             <div class="card-body">
                 <h6 class="text-muted">Confirmed Date</h6>
                 <h5>@Model.ConfirmedDate</h5>
@@ -54,21 +47,28 @@
         </div>
     </div>
 
-    <div class="col-md-4">
-        <div class="card shadow-sm border-0">
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 rounded-4">
             <div class="card-body">
-                <h6 class="text-muted">Suggested Date</h6>
-                <h5>@Model.SuggestedDate</h5>
+                <h6 class="text-muted">Total Price</h6>
+                <h5>@ViewBag.TotalPrice.ToString("F2") KM</h5>
             </div>
         </div>
     </div>
 
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body">
+                <h6 class="text-muted">Commission</h6>
+                <h5>@ViewBag.TotalCommission.ToString("F2") KM</h5>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="row mb-4">
-
     <div class="col-md-6">
-        <div class="card shadow-sm border-0 h-100">
+        <div class="card shadow-sm border-0 rounded-4 h-100">
             <div class="card-header bg-white">
                 <h5 class="mb-0">Client Information</h5>
             </div>
@@ -84,48 +84,36 @@
     </div>
 
     <div class="col-md-6">
-        <div class="card shadow-sm border-0 h-100">
+        <div class="card shadow-sm border-0 rounded-4 h-100">
             <div class="card-header bg-white">
                 <h5 class="mb-0">Wedding Summary</h5>
             </div>
 
             <div class="card-body">
+                <p><strong>Suggested Date:</strong> @Model.SuggestedDate</p>
+                <p><strong>Confirmed Date:</strong> @Model.ConfirmedDate</p>
                 <p><strong>Template:</strong> @(Model.Template?.Name ?? "No template")</p>
                 <p><strong>Total Services:</strong> @(Model.WeddingServices?.Count ?? 0)</p>
-                <p><strong>Total Price:</strong> @ViewBag.TotalPrice KM</p>
-                <p><strong>Total Commission:</strong> @ViewBag.TotalCommission KM</p>
             </div>
         </div>
     </div>
-
 </div>
 
-<div class="card shadow-sm border-0 mb-4">
+<div class="card shadow-sm border-0 rounded-4 mb-4">
     <div class="card-header bg-white">
-        <h5 class="mb-0">Add Partner</h5>
+        <h5 class="mb-0">Add Service to Wedding</h5>
     </div>
 
     <div class="card-body">
-
         <form asp-action="AddService" method="post">
+            @Html.AntiForgeryToken()
 
             <input type="hidden" name="WeddingId" value="@Model.Id" />
 
-            <div class="row">
+            <div class="row g-3">
 
-                <div class="col-md-3 mb-3">
-                    <label class="form-label">Category</label>
-
-                    <select id="categoryFilter"
-                            class="form-select"
-                            asp-items="ViewBag.Categories">
-                        <option value="">All Categories</option>
-                    </select>
-                </div>
-
-                <div class="col-md-3 mb-3">
+                <div class="col-md-3">
                     <label class="form-label">Partner</label>
-
                     <select id="partnerSelect"
                             name="PartnerId"
                             class="form-select"
@@ -137,54 +125,71 @@
                            value='@Html.Raw(ViewBag.PartnerCommissions)' />
                 </div>
 
-                <div class="col-md-2 mb-3">
-                    <label class="form-label">
-                        Commission %
-                    </label>
+                <div class="col-md-2">
+                    <label class="form-label">Service Type</label>
+                    <select name="ServiceType" class="form-select">
+                        <option value="General">General</option>
+                        <option value="Band/DJ">Band/DJ</option>
+                        <option value="Restaurant">Restaurant</option>
+                        <option value="Florist">Florist</option>
+                        <option value="Cake">Cake</option>
+                        <option value="Catering">Catering</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
 
+                <div class="col-md-2">
+                    <label class="form-label">Quantity</label>
+                    <input name="Quantity"
+                           type="number"
+                           class="form-control"
+                           value="1"
+                           min="1" />
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Unit Price</label>
+                    <input name="UnitPrice"
+                           type="number"
+                           step="0.01"
+                           class="form-control"
+                           value="0" />
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Commission %</label>
                     <input name="CommissionPercent"
                            id="commissionPercent"
                            class="form-control"
                            readonly />
                 </div>
 
-                <div class="col-md-2 mb-3 d-flex align-items-end">
+                <div class="col-md-1 d-flex align-items-end">
                     <div class="form-check">
-
                         <input name="Confirmed"
                                value="true"
                                type="checkbox"
                                class="form-check-input" />
-
                         <label class="form-check-label">
-                            Confirmed
+                            Yes
                         </label>
-
                     </div>
                 </div>
 
-                <div class="col-md-2 mb-3 d-flex align-items-end">
-                    <button type="submit"
-                            class="btn btn-primary w-100">
-                        Add
+                <div class="col-12 text-end">
+                    <button type="submit" class="btn btn-primary px-5">
+                        Add Service
                     </button>
                 </div>
 
             </div>
-
         </form>
-
     </div>
 </div>
-<div class="card shadow-sm border-0 mb-4">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Wedding Services</h5>
 
-        <a asp-action="AddService"
-           asp-route-weddingId="@Model.Id"
-           class="btn btn-sm btn-primary">
-            + Add Service
-        </a>
+<div class="card shadow-sm border-0 rounded-4 mb-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Wedding Services</h5>
     </div>
 
     <div class="card-body">
@@ -201,7 +206,7 @@
                         <th>Total</th>
                         <th>Commission</th>
                         <th>Confirmed</th>
-                        <th>Actions</th>
+                        <th class="text-end">Actions</th>
                     </tr>
                 </thead>
 
@@ -209,12 +214,26 @@
                     @foreach (var service in Model.WeddingServices)
                     {
                         <tr>
-                            <td class="fw-semibold">@service.Partner?.Name</td>
+                            <td class="fw-semibold">
+                                @if (service.Partner != null)
+                                {
+                                    <a asp-controller="Partners"
+                                           asp-action="Details"
+                                           asp-route-id="@service.Partner.Id"
+                                           class="text-decoration-none">
+                                        @service.Partner.Name
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">No partner</span>
+                                }
+                            </td>
                             <td>@service.ServiceType</td>
                             <td>@service.Quantity</td>
-                            <td>@service.UnitPrice KM</td>
-                            <td>@service.TotalPrice KM</td>
-                            <td>@service.CommissionAmount KM</td>
+                            <td>@service.UnitPrice.ToString("F2") KM</td>
+                            <td>@service.TotalPrice.ToString("F2") KM</td>
+                            <td>@service.CommissionAmount.ToString("F2") KM</td>
                             <td>
                                 @if (service.Confirmed)
                                 {
@@ -225,8 +244,10 @@
                                     <span class="badge bg-warning text-dark">No</span>
                                 }
                             </td>
-                            <td>
+                            <td class="text-end">
                                 <form asp-action="DeleteService" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+
                                     <input type="hidden" name="serviceId" value="@service.Id" />
                                     <input type="hidden" name="weddingId" value="@Model.Id" />
 
@@ -256,40 +277,36 @@
     </a>
 
     <a asp-action="Edit"
-       asp-route-id="@Model.Id"
-       class="btn btn-outline-warning">
+           asp-route-id="@Model.Id"
+           class="btn btn-outline-warning">
         Edit Wedding
     </a>
 </div>
+
 <script>
-
     document.addEventListener("DOMContentLoaded", function () {
+        const partnerCommissionInput = document.getElementById("partnerCommission");
+        const partnerSelect = document.getElementById("partnerSelect");
+        const commissionInput = document.getElementById("commissionPercent");
 
-        const commissions =
-            JSON.parse(document.getElementById("partnerCommission").value);
+        if (!partnerCommissionInput || !partnerSelect || !commissionInput) {
+            return;
+        }
 
-        const partnerSelect =
-            document.getElementById("partnerSelect");
-
-        const commissionInput =
-            document.getElementById("commissionPercent");
+        const commissions = JSON.parse(partnerCommissionInput.value || "{}");
 
         function updateCommission() {
-
             const partnerId = partnerSelect.value;
 
             if (commissions[partnerId]) {
-                commissionInput.value = commissions[partnerId];
-            }
-            else {
-                commissionInput.value = "";
+                commissionInput.value =
+    Number(commissions[partnerId]).toFixed(2);
+            } else {
+                commissionInput.value = 0;
             }
         }
 
         partnerSelect.addEventListener("change", updateCommission);
-
         updateCommission();
-
     });
-
 </script>

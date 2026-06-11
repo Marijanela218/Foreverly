@@ -81,6 +81,103 @@
                         ? "No notes available."
                         : Model.Notes)
                 </div>
+                @if (Model.Restaurant != null)
+                {
+                    <hr />
+
+                    <h5>Restaurant Details</h5>
+
+                    <p><strong>Wedding Hall:</strong> @(Model.Restaurant.HasWeddingHall ? "Yes" : "No")</p>
+                    <p><strong>Catering:</strong> @(Model.Restaurant.OffersCatering ? "Yes" : "No")</p>
+
+                    <h6>Halls</h6>
+
+                    @foreach (var hall in Model.Restaurant.Halls)
+                    {
+                        <div class="alert alert-light border">
+                            <strong>@hall.Name</strong><br />
+                            Capacity: @hall.Capacity<br />
+                            Base price: @hall.BasePrice KM
+                        </div>
+                    }
+
+                    <h6>Menus</h6>
+
+                    @foreach (var menu in Model.Restaurant.Menus)
+                    {
+                        <div class="alert alert-light border">
+                            <strong>@menu.Name</strong><br />
+                            Price per person: @menu.PricePerPerson KM
+
+                            <ul class="mt-2">
+                                @foreach (var item in menu.MenuItems)
+                                {
+                                    <li>@item.Name</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                }
+
+                @if (Model.Band != null)
+                {
+                    <hr />
+
+                    <h5>Band / DJ Details</h5>
+
+                    <p>@Model.Band.Description</p>
+
+                    <h6>Prices</h6>
+
+                    @foreach (var price in Model.Band.BandPrices)
+                    {
+                        <div class="alert alert-light border">
+                            @price.DayOfWeek - @price.DurationHours h - @price.Price KM
+                        </div>
+                    }
+
+                    <h6>Playlists</h6>
+
+                    @foreach (var playlist in Model.Band.Playlists)
+                    {
+                        <div class="alert alert-light border">
+                            <strong>@playlist.Name</strong><br />
+                            @playlist.Description
+                        </div>
+                    }
+                }
+
+                @if (Model.FloralArrangements != null && Model.FloralArrangements.Any())
+                {
+                    <hr />
+
+                    <h5>Floral Arrangements</h5>
+
+                    @foreach (var item in Model.FloralArrangements)
+                    {
+                        <div class="alert alert-light border">
+                            <strong>@item.Name</strong><br />
+                            @item.Description<br />
+                            Price: @item.BasePrice KM
+                        </div>
+                    }
+                }
+
+                @if (Model.PastryItems != null && Model.PastryItems.Any())
+                {
+                    <hr />
+
+                    <h5>Pastry Items</h5>
+
+                    @foreach (var item in Model.PastryItems)
+                    {
+                        <div class="alert alert-light border">
+                            <strong>@item.Name</strong> (@item.Type)<br />
+                            @item.Description<br />
+                            Price: @item.BasePrice KM
+                        </div>
+                    }
+                }
 
             </div>
 
