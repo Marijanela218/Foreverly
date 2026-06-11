@@ -5,7 +5,7 @@
         public int Id { get; set; }
 
         public int CategoryId { get; set; }
-        public PartnerCategory Category { get; set; } = null!;
+        public PartnerCategory? Category { get; set; }
 
         public string Name { get; set; } = string.Empty;
         public string? Address { get; set; }

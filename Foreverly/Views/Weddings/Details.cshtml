@@ -101,6 +101,82 @@
 </div>
 
 <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Add Partner</h5>
+    </div>
+
+    <div class="card-body">
+
+        <form asp-action="AddService" method="post">
+
+            <input type="hidden" name="WeddingId" value="@Model.Id" />
+
+            <div class="row">
+
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Category</label>
+
+                    <select id="categoryFilter"
+                            class="form-select"
+                            asp-items="ViewBag.Categories">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Partner</label>
+
+                    <select id="partnerSelect"
+                            name="PartnerId"
+                            class="form-select"
+                            asp-items="ViewBag.Partners">
+                    </select>
+
+                    <input type="hidden"
+                           id="partnerCommission"
+                           value='@Html.Raw(ViewBag.PartnerCommissions)' />
+                </div>
+
+                <div class="col-md-2 mb-3">
+                    <label class="form-label">
+                        Commission %
+                    </label>
+
+                    <input name="CommissionPercent"
+                           id="commissionPercent"
+                           class="form-control"
+                           readonly />
+                </div>
+
+                <div class="col-md-2 mb-3 d-flex align-items-end">
+                    <div class="form-check">
+
+                        <input name="Confirmed"
+                               value="true"
+                               type="checkbox"
+                               class="form-check-input" />
+
+                        <label class="form-check-label">
+                            Confirmed
+                        </label>
+
+                    </div>
+                </div>
+
+                <div class="col-md-2 mb-3 d-flex align-items-end">
+                    <button type="submit"
+                            class="btn btn-primary w-100">
+                        Add
+                    </button>
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+</div>
+<div class="card shadow-sm border-0 mb-4">
     <div class="card-header bg-white d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Wedding Services</h5>
 
@@ -185,3 +261,35 @@
         Edit Wedding
     </a>
 </div>
+<script>
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const commissions =
+            JSON.parse(document.getElementById("partnerCommission").value);
+
+        const partnerSelect =
+            document.getElementById("partnerSelect");
+
+        const commissionInput =
+            document.getElementById("commissionPercent");
+
+        function updateCommission() {
+
+            const partnerId = partnerSelect.value;
+
+            if (commissions[partnerId]) {
+                commissionInput.value = commissions[partnerId];
+            }
+            else {
+                commissionInput.value = "";
+            }
+        }
+
+        partnerSelect.addEventListener("change", updateCommission);
+
+        updateCommission();
+
+    });
+
+</script>

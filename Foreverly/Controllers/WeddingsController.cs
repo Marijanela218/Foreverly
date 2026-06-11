@@ -41,6 +41,30 @@ namespace Foreverly.Controllers
             ViewBag.TotalPrice = wedding.WeddingServices.Sum(s => s.TotalPrice);
             ViewBag.TotalCommission = wedding.WeddingServices.Sum(s => s.CommissionAmount);
 
+            ViewBag.Partners = new SelectList(
+                await _context.Partners
+                    .OrderBy(p => p.Name)
+                    .ToListAsync(),
+                "Id",
+                "Name"
+            );
+
+            ViewBag.Categories = new SelectList(
+                await _context.PartnerCategories
+                    .OrderBy(c => c.Name)
+                    .ToListAsync(),
+                "Id",
+                "Name"
+            );
+
+            ViewBag.PartnerCommissions =
+                System.Text.Json.JsonSerializer.Serialize(
+                    await _context.Partners.ToDictionaryAsync(
+                        p => p.Id.ToString(),
+                        p => p.DefaultCommissionPercent
+                    )
+                );
+
             return View(wedding);
         }
 
@@ -186,63 +210,101 @@ namespace Foreverly.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddService(WeddingService weddingService)
+        public async Task<IActionResult> AddService(
+            int WeddingId,
+            int PartnerId,
+            decimal CommissionPercent,
+            bool Confirmed)
         {
-            weddingService.TotalPrice = weddingService.Quantity * weddingService.UnitPrice;
-            weddingService.CommissionAmount =
-                weddingService.TotalPrice * weddingService.CommissionPercent / 100;
+            var partner = await _context.Partners
+                .Include(p => p.Category)
+                .Include(p => p.FloralArrangements)
+                .Include(p => p.PastryItems)
+                .Include(p => p.Band)
+                    .ThenInclude(b => b.BandPrices)
+                .Include(p => p.Restaurant)
+                    .ThenInclude(r => r.Halls)
+                .Include(p => p.Restaurant)
+                    .ThenInclude(r => r.Menus)
+                .FirstOrDefaultAsync(p => p.Id == PartnerId);
 
-            if (!ModelState.IsValid)
+            if (partner == null)
+                return NotFound();
+
+            var wedding = await _context.Weddings.FindAsync(WeddingId);
+
+            if (wedding == null)
+                return NotFound();
+
+            decimal unitPrice = 0;
+
+            if (partner.Restaurant?.Halls.Any() == true)
             {
-                ViewBag.Partners = new SelectList(
-                    await _context.Partners.ToListAsync(),
-                    "Id",
-                    "Name",
-                    weddingService.PartnerId
-                );
-
-                return View(weddingService);
+                unitPrice = partner.Restaurant.Halls.First().BasePrice;
             }
-            var wedding = await _context.Weddings.FindAsync(weddingService.WeddingId);
-
-            if (wedding?.ConfirmedDate != null)
+            else if (partner.Restaurant?.Menus.Any() == true)
             {
-                var collisionExists = await _context.PartnerBookings.AnyAsync(b =>
-                    b.PartnerId == weddingService.PartnerId &&
-                    b.WeddingId != weddingService.WeddingId &&
-                    b.StartDateTime.Date == wedding.ConfirmedDate.Value.ToDateTime(TimeOnly.MinValue).Date
-                );
-
-                if (collisionExists)
-                {
-                    ModelState.AddModelError("", "This partner is already booked for this date.");
-
-                    ViewBag.Partners = new SelectList(
-                        await _context.Partners.ToListAsync(),
-                        "Id",
-                        "Name",
-                        weddingService.PartnerId
-                    );
-
-                    return View(weddingService);
-                }
+                unitPrice = partner.Restaurant.Menus.First().PricePerPerson;
             }
+            else if (partner.Band?.BandPrices.Any() == true)
+            {
+                unitPrice = partner.Band.BandPrices.First().Price;
+            }
+            else if (partner.FloralArrangements.Any())
+            {
+                unitPrice = partner.FloralArrangements.First().BasePrice;
+            }
+            else if (partner.PastryItems.Any())
+            {
+                unitPrice = partner.PastryItems.First().BasePrice;
+            }
+
+            var totalPrice = unitPrice;
+
+            var commissionAmount =
+                totalPrice * CommissionPercent / 100;
+
+            var weddingService = new WeddingService
+            {
+                WeddingId = WeddingId,
+                PartnerId = PartnerId,
+
+                ServiceType = partner.Category?.Name ?? "General",
+
+                Quantity = 1,
+                UnitPrice = unitPrice,
+                TotalPrice = totalPrice,
+
+                CommissionPercent = CommissionPercent,
+                CommissionAmount = commissionAmount,
+
+                Confirmed = Confirmed
+            };
 
             _context.WeddingServices.Add(weddingService);
-            if (wedding?.ConfirmedDate != null)
+
+            if (wedding.ConfirmedDate != null)
             {
                 _context.PartnerBookings.Add(new PartnerBooking
                 {
-                    PartnerId = weddingService.PartnerId,
-                    WeddingId = weddingService.WeddingId,
-                    StartDateTime = wedding.ConfirmedDate.Value.ToDateTime(TimeOnly.MinValue),
-                    EndDateTime = wedding.ConfirmedDate.Value.ToDateTime(TimeOnly.MaxValue),
+                    PartnerId = PartnerId,
+                    WeddingId = WeddingId,
+
+                    StartDateTime = DateTime.SpecifyKind(
+                        wedding.ConfirmedDate.Value.ToDateTime(TimeOnly.MinValue),
+                        DateTimeKind.Utc),
+
+                    EndDateTime = DateTime.SpecifyKind(
+                        wedding.ConfirmedDate.Value.ToDateTime(TimeOnly.MaxValue),
+                        DateTimeKind.Utc),
+
                     Status = "Booked"
                 });
             }
+
             await _context.SaveChangesAsync();
 
-            return RedirectToAction("Details", new { id = weddingService.WeddingId });
+            return RedirectToAction("Details", new { id = WeddingId });
         }
 
         [HttpPost]
