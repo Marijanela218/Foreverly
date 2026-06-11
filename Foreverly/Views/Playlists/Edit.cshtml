@@ -1,44 +1,100 @@
 ﻿@model Foreverly.Models.Playlist
 
 @{
-    ViewData["Title"] = "Edit";
+    ViewData["Title"] = "Edit Playlist";
 }
 
-<h1>Edit</h1>
+<div class="row justify-content-center">
+    <div class="col-lg-8">
 
-<h4>Playlist</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Edit">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="Id" />
-            <div class="form-group">
-                <label asp-for="BandId" class="control-label"></label>
-                <select asp-for="BandId" class="form-control" asp-items="ViewBag.BandId"></select>
-                <span asp-validation-for="BandId" class="text-danger"></span>
+        <div class="card shadow-sm border-0 rounded-4">
+
+            <div class="card-header bg-white">
+                <h1 class="mb-0">Edit Playlist</h1>
             </div>
-            <div class="form-group">
-                <label asp-for="Name" class="control-label"></label>
-                <input asp-for="Name" class="form-control" />
-                <span asp-validation-for="Name" class="text-danger"></span>
+
+            <div class="card-body">
+
+                <form asp-action="Edit" method="post">
+
+                    <div asp-validation-summary="ModelOnly"
+                         class="text-danger mb-3">
+                    </div>
+
+                    <input type="hidden" asp-for="Id" />
+
+                    <div class="row g-4">
+
+                        <div class="col-md-12">
+                            <label asp-for="BandId"
+                                   class="form-label">
+                                Band
+                            </label>
+
+                            <select asp-for="BandId"
+                                    class="form-select"
+                                    asp-items="ViewBag.BandId">
+                            </select>
+
+                            <span asp-validation-for="BandId"
+                                  class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label asp-for="Name"
+                                   class="form-label">
+                                Playlist Name
+                            </label>
+
+                            <input asp-for="Name"
+                                   class="form-control" />
+
+                            <span asp-validation-for="Name"
+                                  class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label asp-for="Description"
+                                   class="form-label">
+                                Description
+                            </label>
+
+                            <textarea asp-for="Description"
+                                      class="form-control"
+                                      rows="5"></textarea>
+
+                            <span asp-validation-for="Description"
+                                  class="text-danger"></span>
+                        </div>
+
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+
+                        <a asp-action="Details"
+                           asp-route-id="@Model.Id"
+                           class="btn btn-secondary">
+                            Back to Details
+                        </a>
+
+                        <button type="submit"
+                                class="btn btn-primary">
+                            Save Changes
+                        </button>
+
+                    </div>
+
+                </form>
+
             </div>
-            <div class="form-group">
-                <label asp-for="Description" class="control-label"></label>
-                <input asp-for="Description" class="form-control" />
-                <span asp-validation-for="Description" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Save" class="btn btn-primary" />
-            </div>
-        </form>
+
+        </div>
+
     </div>
 </div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
-
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }
