@@ -3,6 +3,11 @@
 @{
     ViewData["Title"] = "Seating Plan";
     var tables = Model.Tables.ToList();
+
+    var assignedGuestIds = Model.Tables
+        .SelectMany(t => t.SeatingAssignments)
+        .Select(sa => sa.GuestId)
+        .ToHashSet();
 }
 
 <h1 class="mb-4">Seating Plan</h1>
@@ -23,7 +28,10 @@
                 </button>
             </div>
 
-            <div class="card-body">
+            <div class="card-body"
+                 id="guestList"
+                 ondragover="allowDrop(event)"
+                 ondrop="dropToGuestList(event)">
 
                 <input id="guestSearch"
                        class="form-control mb-3"
@@ -39,7 +47,9 @@
                 <!-- LIST WRAPPER -->
                 <div id="guestList">
 
-                    @foreach (var guest in Model.Guests.OrderBy(g => g.FullName))
+                    @foreach (var guest in Model.Guests
+                        .Where(g => !assignedGuestIds.Contains(g.Id))
+                        .OrderBy(g => g.FullName))
                     {
                         <div class="guest-card mb-2 d-flex justify-content-between align-items-center"
                              draggable="true"
@@ -729,5 +739,29 @@
 
         initDrag();
         }
+
+        function dropToGuestList(ev) {
+
+        ev.preventDefault();
+
+        fetch('/Seating/UnassignGuest', {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+        guestId: parseInt(draggedGuestId)
+        })
+        })
+        .then(r => r.json())
+        .then(data => {
+
+        if (!data.success) {
+        alert("Error");
+        }
+
+        });
+        }
+        
 
 </script>

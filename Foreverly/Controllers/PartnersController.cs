@@ -39,7 +39,25 @@ namespace Foreverly.Controllers
 
             var partner = await _context.Partners
                 .Include(p => p.Category)
+
+                .Include(p => p.Band)
+                    .ThenInclude(b => b.Playlists)
+
+                .Include(p => p.Band)
+                    .ThenInclude(b => b.BandPrices)
+
+                .Include(p => p.Restaurant)
+                    .ThenInclude(r => r.Halls)
+
+                .Include(p => p.Restaurant)
+                    .ThenInclude(r => r.Menus)
+                        .ThenInclude(m => m.MenuItems)
+
+                .Include(p => p.FloralArrangements)
+                .Include(p => p.PastryItems)
+
                 .FirstOrDefaultAsync(m => m.Id == id);
+
             if (partner == null)
             {
                 return NotFound();
@@ -60,13 +78,110 @@ namespace Foreverly.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            [Bind("CategoryId,Name,Address,Phone,Email,ContactPerson,DefaultCommissionPercent,Notes")]
+    [Bind("CategoryId,Name,Address,Phone,Email,ContactPerson,DefaultCommissionPercent,Notes")]
     Partner partner)
         {
             if (ModelState.IsValid)
             {
                 _context.Partners.Add(partner);
                 await _context.SaveChangesAsync();
+
+                var category = await _context.PartnerCategories
+                    .FirstOrDefaultAsync(c => c.Id == partner.CategoryId);
+
+                var categoryName = category?.Name ?? "";
+
+                if (categoryName.Contains("Restoran") || categoryName.Contains("Dvorana"))
+                {
+                    var restaurant = new Restaurant
+                    {
+                        PartnerId = partner.Id,
+                        HasWeddingHall = true,
+                        OffersCatering = true
+                    };
+
+                    _context.Restaurants.Add(restaurant);
+                    await _context.SaveChangesAsync();
+
+                    _context.Halls.Add(new Hall
+                    {
+                        RestaurantId = partner.Id,
+                        Name = "Wedding Hall",
+                        Capacity = 150,
+                        Address = partner.Address,
+                        BasePrice = 2000
+                    });
+
+                    var menu = new Menu
+                    {
+                        RestaurantId = partner.Id,
+                        Name = "Recommended Wedding Menu",
+                        Description = "Standard wedding menu",
+                        PricePerPerson = 55
+                    };
+
+                    _context.Menus.Add(menu);
+                    await _context.SaveChangesAsync();
+
+                    _context.MenuItems.AddRange(
+                        new MenuItem { MenuId = menu.Id, Name = "Soup", Description = "Starter soup" },
+                        new MenuItem { MenuId = menu.Id, Name = "Main dish", Description = "Meat, side dish and salad" },
+                        new MenuItem { MenuId = menu.Id, Name = "Dessert", Description = "Cake or dessert" }
+                    );
+                }
+
+                else if (categoryName.Contains("Slastičarnica"))
+                {
+                    _context.PastryItems.Add(new PastryItem
+                    {
+                        PartnerId = partner.Id,
+                        Name = "Wedding Cake",
+                        Type = "Cake",
+                        Description = "Classic wedding cake",
+                        BasePrice = 300
+                    });
+                }
+
+                else if (categoryName.Contains("Cvjećara") || categoryName.Contains("Cvjećar"))
+                {
+                    _context.FloralArrangements.Add(new FloralArrangement
+                    {
+                        PartnerId = partner.Id,
+                        Name = "Table Decoration",
+                        Description = "Floral table arrangement",
+                        BasePrice = 50
+                    });
+                }
+
+                else if (categoryName.Contains("Bend") || categoryName.Contains("DJ"))
+                {
+                    var band = new Band
+                    {
+                        PartnerId = partner.Id,
+                        Description = "Wedding music band / DJ"
+                    };
+
+                    _context.Bands.Add(band);
+                    await _context.SaveChangesAsync();
+
+                    _context.BandPrices.Add(new BandPrice
+                    {
+                        BandId = partner.Id,
+                        DayOfWeek = "Saturday",
+                        DurationHours = 8,
+                        Price = 2500
+                    });
+
+                    _context.Playlists.Add(new Playlist
+                    {
+                        BandId = partner.Id,
+                        Name = "Wedding Playlist",
+                        Description = "Popular wedding songs"
+                    });
+                }
+
+                await _context.SaveChangesAsync();
+
                 return RedirectToAction(nameof(Index));
             }
 

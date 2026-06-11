@@ -11,6 +11,10 @@ namespace Foreverly.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IHubContext<SeatingHub> _hub;
+        public class UnassignGuestDto
+        {
+            public int GuestId { get; set; }
+        }
 
         private const int CapacityPerTable = 10;
 
@@ -246,6 +250,22 @@ namespace Foreverly.Controllers
             await _context.SaveChangesAsync();
 
             await _hub.Clients.All.SendAsync("RefreshSeating");
+
+            return Json(new { success = true });
+        }
+        [HttpPost]
+        public async Task<IActionResult> UnassignGuest([FromBody] UnassignGuestDto dto)
+        {
+            var assignment = await _context.SeatingAssignments
+                .FirstOrDefaultAsync(x => x.GuestId == dto.GuestId);
+
+            if (assignment != null)
+            {
+                _context.SeatingAssignments.Remove(assignment);
+                await _context.SaveChangesAsync();
+
+                await _hub.Clients.All.SendAsync("RefreshSeating");
+            }
 
             return Json(new { success = true });
         }

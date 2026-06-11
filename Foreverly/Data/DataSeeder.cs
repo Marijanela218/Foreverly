@@ -7,6 +7,9 @@ public static class DataSeeder
 {
     public static async Task SeedAsync(AppDbContext context)
     {
+        if (context.PartnerCategories.Any() || context.Weddings.Any())
+            return;
+
         var faker = new Faker("hr");
 
         // ─── 1. KATEGORIJE ─────────────────────────────
