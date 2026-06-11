@@ -10,22 +10,23 @@ using Foreverly.Models;
 
 namespace Foreverly.Controllers
 {
-    public class SongsController : Controller
+    public class BandPricesController : Controller
     {
         private readonly AppDbContext _context;
 
-        public SongsController(AppDbContext context)
+        public BandPricesController(AppDbContext context)
         {
             _context = context;
         }
 
-        // GET: Songs
+        // GET: BandPrices
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Songs.ToListAsync());
+            var appDbContext = _context.BandPrices.Include(b => b.Band);
+            return View(await appDbContext.ToListAsync());
         }
 
-        // GET: Songs/Details/5
+        // GET: BandPrices/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -33,47 +34,42 @@ namespace Foreverly.Controllers
                 return NotFound();
             }
 
-            var song = await _context.Songs
+            var bandPrice = await _context.BandPrices
+                .Include(b => b.Band)
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (song == null)
+            if (bandPrice == null)
             {
                 return NotFound();
             }
 
-            return View(song);
+            return View(bandPrice);
         }
 
-        // GET: Songs/Create
+        // GET: BandPrices/Create
         public IActionResult Create()
         {
+            ViewData["BandId"] = new SelectList(_context.Bands, "PartnerId", "PartnerId");
             return View();
         }
 
-        // POST: Songs/Create
+        // POST: BandPrices/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Song song, int? bandId)
+        public async Task<IActionResult> Create([Bind("Id,BandId,DayOfWeek,DurationHours,Price")] BandPrice bandPrice)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(song);
+                _context.Add(bandPrice);
                 await _context.SaveChangesAsync();
-
-                if (bandId.HasValue)
-                {
-                    return RedirectToAction("Details", "Music", new { id = bandId.Value });
-                }
-
                 return RedirectToAction(nameof(Index));
             }
-
-            ViewBag.BandId = bandId;
-            return View(song);
+            ViewData["BandId"] = new SelectList(_context.Bands, "PartnerId", "PartnerId", bandPrice.BandId);
+            return View(bandPrice);
         }
 
-        // GET: Songs/Edit/5
+        // GET: BandPrices/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -81,22 +77,23 @@ namespace Foreverly.Controllers
                 return NotFound();
             }
 
-            var song = await _context.Songs.FindAsync(id);
-            if (song == null)
+            var bandPrice = await _context.BandPrices.FindAsync(id);
+            if (bandPrice == null)
             {
                 return NotFound();
             }
-            return View(song);
+            ViewData["BandId"] = new SelectList(_context.Bands, "PartnerId", "PartnerId", bandPrice.BandId);
+            return View(bandPrice);
         }
 
-        // POST: Songs/Edit/5
+        // POST: BandPrices/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Title,Artist,Genre")] Song song)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,BandId,DayOfWeek,DurationHours,Price")] BandPrice bandPrice)
         {
-            if (id != song.Id)
+            if (id != bandPrice.Id)
             {
                 return NotFound();
             }
@@ -105,12 +102,12 @@ namespace Foreverly.Controllers
             {
                 try
                 {
-                    _context.Update(song);
+                    _context.Update(bandPrice);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!SongExists(song.Id))
+                    if (!BandPriceExists(bandPrice.Id))
                     {
                         return NotFound();
                     }
@@ -121,10 +118,11 @@ namespace Foreverly.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(song);
+            ViewData["BandId"] = new SelectList(_context.Bands, "PartnerId", "PartnerId", bandPrice.BandId);
+            return View(bandPrice);
         }
 
-        // GET: Songs/Delete/5
+        // GET: BandPrices/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -132,34 +130,35 @@ namespace Foreverly.Controllers
                 return NotFound();
             }
 
-            var song = await _context.Songs
+            var bandPrice = await _context.BandPrices
+                .Include(b => b.Band)
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (song == null)
+            if (bandPrice == null)
             {
                 return NotFound();
             }
 
-            return View(song);
+            return View(bandPrice);
         }
 
-        // POST: Songs/Delete/5
+        // POST: BandPrices/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var song = await _context.Songs.FindAsync(id);
-            if (song != null)
+            var bandPrice = await _context.BandPrices.FindAsync(id);
+            if (bandPrice != null)
             {
-                _context.Songs.Remove(song);
+                _context.BandPrices.Remove(bandPrice);
             }
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool SongExists(int id)
+        private bool BandPriceExists(int id)
         {
-            return _context.Songs.Any(e => e.Id == id);
+            return _context.BandPrices.Any(e => e.Id == id);
         }
     }
 }

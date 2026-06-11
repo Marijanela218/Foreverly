@@ -1,0 +1,83 @@
+﻿@model Foreverly.Models.Band
+
+@{
+    ViewData["Title"] = "Edit Band";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="fw-bold">Edit Band</h1>
+        <p class="text-muted">Update band contact details and description</p>
+    </div>
+
+    <a asp-controller="Music"
+       asp-action="Details"
+       asp-route-id="@Model.PartnerId"
+       class="btn btn-secondary">
+        Back to Details
+    </a>
+</div>
+
+<div class="card shadow-sm border-0 rounded-4">
+    <div class="card-body">
+
+        <form asp-action="Edit" method="post">
+            <input type="hidden" asp-for="PartnerId" />
+            <input type="hidden" asp-for="Partner.Id" />
+            <input type="hidden" asp-for="Partner.CategoryId" />
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Partner.Name" class="form-label">Band Name</label>
+                    <input asp-for="Partner.Name" class="form-control" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Partner.ContactPerson" class="form-label">Contact Person</label>
+                    <input asp-for="Partner.ContactPerson" class="form-control" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Partner.Phone" class="form-label">Phone</label>
+                    <input asp-for="Partner.Phone" class="form-control" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Partner.Email" class="form-label">Email</label>
+                    <input asp-for="Partner.Email" class="form-control" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Partner.Address" class="form-label">Address</label>
+                    <input asp-for="Partner.Address" class="form-control" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Partner.DefaultCommissionPercent" class="form-label">Commission %</label>
+                    <input asp-for="Partner.DefaultCommissionPercent" class="form-control" />
+                </div>
+
+                <div class="col-md-12 mb-3">
+                    <label asp-for="Description" class="form-label">Description</label>
+                    <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+                </div>
+
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    Save Changes
+                </button>
+
+                <a asp-controller="Music"
+                   asp-action="Details"
+                   asp-route-id="@Model.PartnerId"
+                   class="btn btn-outline-secondary">
+                    Back to Details
+                </a>
+            </div>
+        </form>
+
+    </div>
+</div>
