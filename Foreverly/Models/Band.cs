@@ -2,7 +2,8 @@
 {
     public class Band
     {
-        public int PartnerId { get; set; }
+        public int PartnerId { get; set; }   // PK i FK
+
         public Partner Partner { get; set; } = null!;
 
         public string? Description { get; set; }

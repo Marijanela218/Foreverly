@@ -43,82 +43,56 @@ namespace Foreverly.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // 1:1 Partner -> Band
+            // =====================================================
+            // BAND FIX
+            // =====================================================
             modelBuilder.Entity<Band>()
                 .HasKey(b => b.PartnerId);
 
             modelBuilder.Entity<Band>()
                 .HasOne(b => b.Partner)
                 .WithOne(p => p.Band)
-                .HasForeignKey<Band>(b => b.PartnerId);
+                .HasForeignKey<Band>(b => b.PartnerId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-            // 1:1 Partner -> Restaurant
+            modelBuilder.Entity<Band>()
+                .ToTable("Bands");
+
+            // =====================================================
+            // RESTAURANT FIX
+            // =====================================================
             modelBuilder.Entity<Restaurant>()
                 .HasKey(r => r.PartnerId);
 
             modelBuilder.Entity<Restaurant>()
                 .HasOne(r => r.Partner)
                 .WithOne(p => p.Restaurant)
-                .HasForeignKey<Restaurant>(r => r.PartnerId);
+                .HasForeignKey<Restaurant>(r => r.PartnerId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-            // SeatingAssignment: Guest 1:1 Assignment
+            modelBuilder.Entity<Restaurant>()
+                .ToTable("Restaurants");
+
+            // =====================================================
+            // SEATING FIX (🔥 ISPRAVNO - BEZ CONFLICTA)
+            // =====================================================
             modelBuilder.Entity<SeatingAssignment>()
                 .HasOne(sa => sa.Guest)
-                .WithOne(g => g.SeatingAssignment)
-                .HasForeignKey<SeatingAssignment>(sa => sa.GuestId);
+                .WithMany()
+                .HasForeignKey(sa => sa.GuestId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-            // WeddingTable ime tabele u bazi
+            modelBuilder.Entity<SeatingAssignment>()
+                .HasOne(sa => sa.Table)
+                .WithMany(t => t.SeatingAssignments)
+                .HasForeignKey(sa => sa.TableId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // =====================================================
+            // TABLE RENAME
+            // =====================================================
             modelBuilder.Entity<WeddingTable>()
                 .ToTable("Tables");
-
-            // Decimal preciznost
-            modelBuilder.Entity<Partner>()
-                .Property(p => p.DefaultCommissionPercent)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<BandPrice>()
-                .Property(bp => bp.Price)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<FloralArrangement>()
-                .Property(f => f.BasePrice)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<PastryItem>()
-                .Property(p => p.BasePrice)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<Hall>()
-                .Property(h => h.BasePrice)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<Menu>()
-                .Property(m => m.PricePerPerson)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<WeddingService>()
-                .Property(ws => ws.UnitPrice)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<WeddingService>()
-                .Property(ws => ws.TotalPrice)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<WeddingService>()
-                .Property(ws => ws.CommissionPercent)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<WeddingService>()
-                .Property(ws => ws.CommissionAmount)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<WeddingServiceItem>()
-                .Property(wsi => wsi.UnitPrice)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<WeddingServiceItem>()
-                .Property(wsi => wsi.TotalPrice)
-                .HasPrecision(18, 2);
         }
     }
 }
