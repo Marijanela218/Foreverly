@@ -1,8 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using Foreverly.Data;
+﻿using Foreverly.Data;
 using Foreverly.Models;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
@@ -185,17 +183,56 @@ namespace Foreverly.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> AddService(int weddingId)
+        public async Task<IActionResult> AddService(int weddingId, string? serviceType)
         {
             var wedding = await _context.Weddings.FindAsync(weddingId);
 
             if (wedding == null)
                 return NotFound();
 
-            ViewBag.WeddingId = weddingId;
+            var partnersQuery = _context.Partners
+                .Include(p => p.Category)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(serviceType))
+            {
+                partnersQuery = serviceType switch
+                {
+                    "Band/DJ" => partnersQuery.Where(p =>
+                        p.Category.Name == "Bend/DJ"),
+
+                    "Florist" => partnersQuery.Where(p =>
+                        p.Category.Name == "Cvjećara" ||
+                        p.Category.Name == "Cvjećar"),
+
+                    "Restaurant" => partnersQuery.Where(p =>
+                        p.Category.Name == "Restoran" ||
+                        p.Category.Name == "Restoran/Dvorana"),
+
+                    "Cake" => partnersQuery.Where(p =>
+                        p.Category.Name == "Slastičarnica" ||
+                        p.Category.Name == "Slastičarna"),
+
+                    "Hall" => partnersQuery.Where(p =>
+                        p.Category.Name == "Restoran" ||
+                        p.Category.Name == "Restoran/Dvorana"),
+
+                    "Catering" => partnersQuery.Where(p =>
+                        p.Category.Name == "Restoran" ||
+                        p.Category.Name == "Restoran/Dvorana"),
+
+                    _ => partnersQuery
+                };
+            }
+            else
+            {
+                partnersQuery = partnersQuery.Where(p => false);
+            }
+
+            ViewBag.SelectedServiceType = serviceType;
 
             ViewBag.Partners = new SelectList(
-                await _context.Partners.ToListAsync(),
+                await partnersQuery.OrderBy(p => p.Name).ToListAsync(),
                 "Id",
                 "Name"
             );
@@ -203,9 +240,49 @@ namespace Foreverly.Controllers
             return View(new WeddingService
             {
                 WeddingId = weddingId,
+                ServiceType = serviceType ?? "",
                 Quantity = 1,
                 CommissionPercent = 10
             });
+        }
+        [HttpGet]
+        public async Task<IActionResult> GetPartnersByServiceType(string serviceType)
+        {
+            var partnersQuery = _context.Partners
+                .Include(p => p.Category)
+                .AsQueryable();
+
+            partnersQuery = serviceType switch
+            {
+                "Bend/DJ" => partnersQuery.Where(p =>
+                    p.Category.Name == "Bend/DJ"),
+
+                "Restoran" => partnersQuery.Where(p =>
+                    p.Category.Name == "Restoran" ||
+                    p.Category.Name == "Restoran/Dvorana"),
+
+                "Cvjećara" => partnersQuery.Where(p =>
+                    p.Category.Name == "Cvjećara" ||
+                    p.Category.Name == "Cvjećar"),
+
+                "Slastičarnica" => partnersQuery.Where(p =>
+                    p.Category.Name == "Slastičarnica" ||
+                    p.Category.Name == "Slastičarna"),
+
+                _ => partnersQuery.Where(p => false)
+            };
+
+            var partners = await partnersQuery
+                .OrderBy(p => p.Name)
+                .Select(p => new
+                {
+                    id = p.Id,
+                    name = p.Name,
+                    commission = p.DefaultCommissionPercent
+                })
+                .ToListAsync();
+
+            return Json(partners);
         }
 
         [HttpPost]
@@ -213,6 +290,9 @@ namespace Foreverly.Controllers
         public async Task<IActionResult> AddService(
             int WeddingId,
             int PartnerId,
+            string ServiceType,
+            int Quantity,
+            decimal UnitPrice,
             decimal CommissionPercent,
             bool Confirmed)
         {
@@ -259,7 +339,12 @@ namespace Foreverly.Controllers
                 unitPrice = partner.PastryItems.First().BasePrice;
             }
 
-            var totalPrice = unitPrice;
+            if (UnitPrice > 0)
+            {
+                unitPrice = UnitPrice;
+            }
+
+            var totalPrice = unitPrice * Quantity;
 
             var commissionAmount =
                 totalPrice * CommissionPercent / 100;
@@ -269,9 +354,9 @@ namespace Foreverly.Controllers
                 WeddingId = WeddingId,
                 PartnerId = PartnerId,
 
-                ServiceType = partner.Category?.Name ?? "General",
+                ServiceType = ServiceType,
 
-                Quantity = 1,
+                Quantity = Quantity,
                 UnitPrice = unitPrice,
                 TotalPrice = totalPrice,
 

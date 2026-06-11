@@ -17,13 +17,13 @@
                 <select name="serviceType" class="form-control" onchange="this.form.submit()">
                     <option value="">-- Select service type --</option>
 
-                    @if (ViewBag.SelectedServiceType == "Band")
+                    @if (ViewBag.SelectedServiceType == "Band/DJ")
                     {
-                        <option value="Band" selected>Band / DJ</option>
+                        <option value="Band/DJ" selected>Band/DJ</option>
                     }
                     else
                     {
-                        <option value="Band">Band / DJ</option>
+                        <option value="Band/DJ">Band/DJ</option>
                     }
 
                     @if (ViewBag.SelectedServiceType == "Restaurant")
@@ -76,6 +76,7 @@
 
         <form asp-action="AddService" method="post">
             <input type="hidden" name="WeddingId" value="@Model.WeddingId" />
+            <input type="hidden" name="ServiceType" value="@ViewBag.SelectedServiceType" />
 
             <div class="mb-3">
                 <label class="form-label">Partner</label>
