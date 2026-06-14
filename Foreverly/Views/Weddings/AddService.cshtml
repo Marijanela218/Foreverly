@@ -1,0 +1,118 @@
+﻿@model Foreverly.Models.WeddingService
+
+@{
+    ViewData["Title"] = "Add Service";
+}
+
+<h1 class="fw-bold mb-3">Add Service to Wedding</h1>
+
+<div class="card shadow-sm border-0 rounded-4">
+    <div class="card-body">
+
+        <form method="get" asp-action="AddService" class="mb-4">
+            <input type="hidden" name="weddingId" value="@Model.WeddingId" />
+
+            <div class="mb-3">
+                <label class="form-label">Service Type</label>
+                <select name="serviceType" class="form-control" onchange="this.form.submit()">
+                    <option value="">-- Select service type --</option>
+
+                    @if (ViewBag.SelectedServiceType == "Band/DJ")
+                    {
+                        <option value="Band/DJ" selected>Band/DJ</option>
+                    }
+                    else
+                    {
+                        <option value="Band/DJ">Band/DJ</option>
+                    }
+
+                    @if (ViewBag.SelectedServiceType == "Restaurant")
+                    {
+                        <option value="Restaurant" selected>Restaurant</option>
+                    }
+                    else
+                    {
+                        <option value="Restaurant">Restaurant</option>
+                    }
+
+                    @if (ViewBag.SelectedServiceType == "Florist")
+                    {
+                        <option value="Florist" selected>Florist</option>
+                    }
+                    else
+                    {
+                        <option value="Florist">Florist</option>
+                    }
+
+                    @if (ViewBag.SelectedServiceType == "Cake")
+                    {
+                        <option value="Cake" selected>Cake / Cookies</option>
+                    }
+                    else
+                    {
+                        <option value="Cake">Cake / Cookies</option>
+                    }
+
+                    @if (ViewBag.SelectedServiceType == "Hall")
+                    {
+                        <option value="Hall" selected>Hall</option>
+                    }
+                    else
+                    {
+                        <option value="Hall">Hall</option>
+                    }
+
+                    @if (ViewBag.SelectedServiceType == "Catering")
+                    {
+                        <option value="Catering" selected>Catering</option>
+                    }
+                    else
+                    {
+                        <option value="Catering">Catering</option>
+                    }
+                </select>
+            </div>
+        </form>
+
+        <form asp-action="AddService" method="post">
+            <input type="hidden" name="WeddingId" value="@Model.WeddingId" />
+            <input type="hidden" name="ServiceType" value="@ViewBag.SelectedServiceType" />
+
+            <div class="mb-3">
+                <label class="form-label">Partner</label>
+                <select name="PartnerId" class="form-control" asp-items="ViewBag.Partners">
+                    <option value="">-- Select partner --</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Commission %</label>
+                <input name="CommissionPercent"
+                       value="@Model.CommissionPercent"
+                       class="form-control" />
+            </div>
+
+            <div class="form-check mb-3">
+                <input name="Confirmed"
+                       value="true"
+                       class="form-check-input"
+                       type="checkbox" />
+
+                <label class="form-check-label">
+                    Confirmed
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                Add Service
+            </button>
+
+            <a asp-action="Details"
+               asp-route-id="@Model.WeddingId"
+               class="btn btn-secondary">
+                Back to Wedding
+            </a>
+        </form>
+
+    </div>
+</div>

@@ -6,7 +6,7 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h1 class="fw-bold">@Model.ClientName</h1>
+        <h1>@Model.ClientName</h1>
         <p class="text-muted mb-0">Wedding details and services overview</p>
     </div>
 
@@ -113,28 +113,24 @@
             <div class="row g-3">
 
                 <div class="col-md-3">
+                    <label class="form-label">Service Type</label>
+                    <select id="serviceTypeSelect"
+                            name="ServiceType"
+                            class="form-select">
+                        <option value="">-- Select service type --</option>
+                        <option value="Bend/DJ">Bend/DJ</option>
+                        <option value="Restoran">Restoran</option>
+                        <option value="Cvjećara">Cvjećara</option>
+                        <option value="Slastičarnica">Slastičarnica</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
                     <label class="form-label">Partner</label>
                     <select id="partnerSelect"
                             name="PartnerId"
-                            class="form-select"
-                            asp-items="ViewBag.Partners">
-                    </select>
-
-                    <input type="hidden"
-                           id="partnerCommission"
-                           value='@Html.Raw(ViewBag.PartnerCommissions)' />
-                </div>
-
-                <div class="col-md-2">
-                    <label class="form-label">Service Type</label>
-                    <select name="ServiceType" class="form-select">
-                        <option value="General">General</option>
-                        <option value="Band/DJ">Band/DJ</option>
-                        <option value="Restaurant">Restaurant</option>
-                        <option value="Florist">Florist</option>
-                        <option value="Cake">Cake</option>
-                        <option value="Catering">Catering</option>
-                        <option value="Other">Other</option>
+                            class="form-select">
+                        <option value="">-- First select service type --</option>
                     </select>
                 </div>
 
@@ -161,17 +157,18 @@
                     <input name="CommissionPercent"
                            id="commissionPercent"
                            class="form-control"
+                           value="0"
                            readonly />
                 </div>
 
-                <div class="col-md-1 d-flex align-items-end">
+                <div class="col-md-2 d-flex align-items-end">
                     <div class="form-check">
                         <input name="Confirmed"
                                value="true"
                                type="checkbox"
                                class="form-check-input" />
                         <label class="form-check-label">
-                            Yes
+                            Confirmed
                         </label>
                     </div>
                 </div>
@@ -309,4 +306,64 @@
         partnerSelect.addEventListener("change", updateCommission);
         updateCommission();
     });
+
 </script>
+
+        @section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const serviceTypeSelect = document.getElementById("serviceTypeSelect");
+            const partnerSelect = document.getElementById("partnerSelect");
+            const commissionInput = document.getElementById("commissionPercent");
+
+            if (!serviceTypeSelect || !partnerSelect || !commissionInput) {
+                return;
+            }
+
+            serviceTypeSelect.addEventListener("change", async function () {
+                const serviceType = this.value;
+
+                partnerSelect.innerHTML = "";
+                commissionInput.value = "0";
+
+                if (!serviceType) {
+                    partnerSelect.innerHTML =
+                        '<option value="">-- First select service type --</option>';
+                    return;
+                }
+
+                const response = await fetch(`/Weddings/GetPartnersByServiceType?serviceType=${encodeURIComponent(serviceType)}`);
+                const partners = await response.json();
+
+                if (partners.length === 0) {
+                    partnerSelect.innerHTML =
+                        '<option value="">No partners found</option>';
+                    return;
+                }
+
+                partnerSelect.innerHTML =
+                    '<option value="">-- Select partner --</option>';
+
+                partners.forEach(partner => {
+                    const option = document.createElement("option");
+                    option.value = partner.id;
+                    option.textContent = partner.name;
+                    option.dataset.commission = partner.commission;
+
+                    partnerSelect.appendChild(option);
+                });
+            });
+
+            partnerSelect.addEventListener("change", function () {
+                const selectedOption = this.options[this.selectedIndex];
+
+                if (selectedOption && selectedOption.dataset.commission) {
+                    commissionInput.value =
+                        Number(selectedOption.dataset.commission).toFixed(2);
+                } else {
+                    commissionInput.value = "0";
+                }
+            });
+        });
+    </script>
+}

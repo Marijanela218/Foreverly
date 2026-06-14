@@ -1,0 +1,70 @@
+﻿@model Foreverly.Models.Song
+
+@{
+    ViewData["Title"] = "Song Details";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+
+        <div class="card shadow-sm border-0 rounded-4">
+
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="mb-0">Song Details</h1>
+                    <p class="text-muted mb-0">Overview of selected song</p>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <a asp-action="Edit"
+                       asp-route-id="@Model.Id"
+                       class="btn btn-outline-warning">
+                        Edit
+                    </a>
+
+                    <a asp-action="Index"
+                       class="btn btn-secondary">
+                        Back
+                    </a>
+                </div>
+            </div>
+
+            <div class="card-body">
+
+                <div class="row g-4">
+
+                    <div class="col-md-12">
+                        <div class="stats-card card">
+                            <div class="card-body">
+                                <h6 class="text-muted">Title</h6>
+                                <h3 class="mb-0">@Model.Title</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="text-muted">Artist</h6>
+                                <h5 class="mb-0">@Model.Artist</h5>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="text-muted">Genre</h6>
+                                <h5 class="mb-0">@Model.Genre</h5>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>

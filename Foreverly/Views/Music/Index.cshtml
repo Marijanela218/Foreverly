@@ -1,0 +1,87 @@
+﻿@model IEnumerable<Foreverly.Models.Band>
+
+@{
+    ViewData["Title"] = "Music";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="fw-bold">Music Management</h1>
+        <p class="text-muted">Pregled bendova, pjesama i playlisti</p>
+    </div>
+
+    <a asp-controller="Songs" asp-action="Create" class="btn btn-primary rounded-pill px-4">
+        + Add Song
+    </a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body">
+                <h6 class="text-muted">Total Bands</h6>
+                <h2 class="fw-bold">@ViewBag.TotalBands</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body">
+                <h6 class="text-muted">Total Songs</h6>
+                <h2 class="fw-bold">@ViewBag.TotalSongs</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body">
+                <h6 class="text-muted">Total Playlists</h6>
+                <h2 class="fw-bold">@ViewBag.TotalPlaylists</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form method="get" class="mb-4">
+    <div class="search-box shadow-sm">
+        <input name="search"
+               value="@ViewBag.Search"
+               class="form-control border-0"
+               placeholder="Search by band, song, artist or genre..." />
+
+        <button class="btn btn-primary px-4" type="submit">
+            Search
+        </button>
+    </div>
+</form>
+
+<div class="row g-4">
+    @foreach (var band in Model)
+    {
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 rounded-4 h-100 music-card">
+                <div class="card-body">
+                    <h5 class="fw-bold">@band.Partner.Name</h5>
+                    <p class="text-muted">@band.Description</p>
+
+                    <p class="mb-1">
+                        <strong>Playlists:</strong> @band.Playlists.Count
+                    </p>
+
+                    <p class="mb-3">
+                        <strong>Contact:</strong> @band.Partner.Phone
+                    </p>
+
+                    <a asp-controller="Music"
+                       asp-action="Details"
+                       asp-route-id="@band.PartnerId"
+                       class="btn btn-outline-primary w-100">
+                        View Details
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+</div>
